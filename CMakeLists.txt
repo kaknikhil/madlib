@@ -205,6 +205,19 @@ include(LinuxUtils)
 include(OSXUtils)
 include(Options)
 
+MACRO(HEADER_DIRECTORIES return_list)
+    FILE(GLOB_RECURSE new_list methods/*.h)
+    SET(dir_list "")
+    FOREACH(file_path ${new_list})
+        GET_FILENAME_COMPONENT(dir_path ${file_path} PATH)
+        SET(dir_list ${dir_list} ${dir_path})
+    ENDFOREACH()
+    LIST(REMOVE_DUPLICATES dir_list)
+    SET(${return_list} ${dir_list})
+ENDMACRO()
+
+HEADER_DIRECTORIES(all_headers)
+include_directories(${all_headers})
 
 # -- Include all parts ---------------------------------------------------------
 
@@ -276,3 +289,31 @@ install(CODE "
            )
 ")
 
+
+set(SOURCE_FILES
+        methods/utils/src/pg_gp/exec_sql_using.c
+        methods/utils/src/pg_gp/to_char.c
+        methods/utils/src/pg_gp/noop.c
+        methods/array_ops/src/pg_gp/array_ops.c
+        methods/svec_util/src/pg_gp/generate_svec.c
+        methods/svec_util/src/pg_gp/gp_sfv.c
+        methods/svec_util/src/pg_gp/svec_util.c
+        methods/stemmer/src/pg_gp/porter_stemmer.c
+        methods/sketch/src/pg_gp/sortasort.c
+        methods/sketch/src/pg_gp/sketch_support.c
+        methods/sketch/src/pg_gp/fm.c
+        methods/sketch/src/pg_gp/mfvsketch.c
+        methods/sketch/src/pg_gp/countmin.c
+        methods/kmeans/src/pg_gp/kmeans.c
+        methods/svec/src/pg_gp/SparseData.c
+        methods/svec/src/pg_gp/operators.c
+        methods/svec/src/pg_gp/sparse_vector.c
+        methods/svec_util/src/pg_gp/svec_util.h
+        methods/sketch/src/pg_gp/countmin.h
+        methods/sketch/src/pg_gp/sortasort.h
+        methods/sketch/src/pg_gp/sketch_support.h
+        methods/svec/src/pg_gp/SparseData.h
+        methods/svec/src/pg_gp/float_specials.h
+        methods/svec/src/pg_gp/sparse_vector.h)
+
+add_executable(MADlib ${SOURCE_FILES})
