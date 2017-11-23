@@ -9,6 +9,7 @@
 set(CMAKE_GENERATOR_CC  suncc gcc)
 set(CMAKE_GENERATOR_CXX sunCC g++)
 
+
 # -- CMake setup ---------------------------------------------------------------
 
 project(MADlib)
@@ -218,6 +219,13 @@ ENDMACRO()
 
 HEADER_DIRECTORIES(all_headers)
 include_directories(${all_headers})
+
+# setup gpdb
+set(GPDB_SRC "../gpdb")
+
+include_directories(
+        ${GPDB_SRC}/src/include
+)
 
 # -- Include all parts ---------------------------------------------------------
 
