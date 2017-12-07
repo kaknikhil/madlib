@@ -58,28 +58,8 @@ static inline int check_scalar(int i1, int i2)
 	return(0);
 }
 
-/*
- * This routine supplies a pointer to a SparseData derived from an SvecType.
- * The SvecType is a serialized structure with fixed memory allocations, so
- * care must be taken not to append to the embedded StringInfo structs
- * without re-serializing the SparseData into the SvecType.
- */
-static inline SparseData sdata_from_svec(SvecType *svec)
-{
-	char *sdataptr   = SVEC_SDATAPTR(svec);
-	SparseData sdata = (SparseData)sdataptr;
-	sdata->vals  = (StringInfo)SDATA_DATA_SINFO(sdataptr);
-	sdata->index = (StringInfo)SDATA_INDEX_SINFO(sdataptr);
-	sdata->vals->data   = SVEC_VALS_PTR(svec);
-	if (sdata->index->maxlen == 0)
-	{
-		sdata->index->data = NULL;
-	} else
-	{
-		sdata->index->data  = SVEC_INDEX_PTR(svec);
-	}
-	return(sdata);
-}
+
+SparseData sdata_from_svec(SvecType *svec);
 
 static inline void printout_svec(SvecType *svec, char *msg, int stop);
 static inline void printout_svec(SvecType *svec, char *msg, int stop)

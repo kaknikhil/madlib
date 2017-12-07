@@ -809,6 +809,9 @@ Datum svec_pivot(PG_FUNCTION_ARGS)
 		}
 	}
 
+	//SvecType *svec1 = svec_from_sparsedata(sdata, 1);
+//	pfree(sdata);
+
 	PG_RETURN_SVECTYPE_P(svec);
 }
 

@@ -388,4 +388,61 @@ SvecType *reallocSvec(SvecType *source)
 	return(svec);
 }
 
-			// 
+			//
+/**
+ * This routine supplies a pointer to a SparseData derived from an SvecType.
+ * The SvecType is a serialized structure with fixed memory allocations, so
+ * care must be taken not to append to the embedded StringInfo structs
+ * without re-serializing the SparseData into the SvecType.
+ */
+//SparseData sdata_from_svec(SvecType *svec)
+//{
+//    char *sdataptr   = SVEC_SDATAPTR(svec);
+//    SparseData sdata = (SparseData)sdataptr;
+//    sdata->vals = (StringInfo)SDATA_DATA_SINFO(sdataptr);
+//    sdata->index = (StringInfo)SDATA_INDEX_SINFO(sdataptr);
+//    sdata->vals->data = SVEC_VALS_PTR(svec);
+//    if (sdata->index->maxlen == 0) {
+//        sdata->index->data = NULL;
+//    } else {
+//        sdata->index->data = SVEC_INDEX_PTR(svec);
+//    }
+//
+//    SparseData sdata_clone = (SparseData)palloc(sizeof(SparseDataStruct));
+//    sdata_clone->type_of_data       = sdata->type_of_data;
+//    sdata_clone->unique_value_count = sdata->unique_value_count;
+//    sdata_clone->total_value_count  = sdata->total_value_count;
+//
+//    sdata_clone->vals  = copyStringInfo((StringInfo)SDATA_DATA_SINFO(sdataptr));
+//    sdata_clone->vals->maxlen = sdata->vals->maxlen;
+//
+//    sdata_clone->index = copyStringInfo((StringInfo)SDATA_INDEX_SINFO(sdataptr));
+//    sdata_clone->index->maxlen = sdata->index->maxlen;
+//
+////    sdata_clone->vals->data   = SVEC_VALS_PTR(svec);
+////
+////    if (sdata_clone->index->maxlen == 0)
+////    {
+////        sdata_clone->index->data = NULL;
+////    } else
+////    {
+////        sdata_clone->index->data  = SVEC_INDEX_PTR(svec);
+////    }
+//    return(sdata_clone);
+//
+//}
+
+
+SparseData sdata_from_svec(SvecType *svec) {
+    char *sdataptr = SVEC_SDATAPTR(svec);
+    SparseData sdata = (SparseData) sdataptr;
+    sdata->vals = (StringInfo)SDATA_DATA_SINFO(sdataptr);
+    sdata->index = (StringInfo)SDATA_INDEX_SINFO(sdataptr);
+    sdata->vals->data = SVEC_VALS_PTR(svec);
+    if (sdata->index->maxlen == 0) {
+        sdata->index->data = NULL;
+    } else {
+        sdata->index->data = SVEC_INDEX_PTR(svec);
+    }
+    return (sdata);
+}
