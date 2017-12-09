@@ -45,13 +45,13 @@ const size_t MAX_LANCZOS_STEPS = 5000;
 const double ZERO_THRESHOLD = 1e-8;
 
 
-typedef struct __type_info{
+typedef struct __type_info_float8_svd{
     Oid oid;
     int16_t len;
     bool    byval;
     char    align;
 
-    __type_info(Oid oid):oid(oid)
+    __type_info_float8_svd(Oid oid):oid(oid)
     {
         len = 8 ;
         byval = TRUE;
