@@ -39,11 +39,30 @@ typedef struct __type_info{
 
     __type_info(Oid oid):oid(oid)
     {
-        madlib_get_typlenbyvalalign(oid, &len, &byval, &align);
+        len = 4 ;
+        byval = TRUE;
+        align = 'i';
+//        get_typlenbyvalalign(oid, &len, &byval, &align);
     }
 } type_info;
-static type_info FLOAT8TI(FLOAT8OID);
+
+typedef struct __type_info_float8{
+    Oid oid;
+    int16_t len;
+    bool    byval;
+    char    align;
+
+    __type_info_float8(Oid oid):oid(oid)
+    {
+        len = 8 ;
+        byval = TRUE;
+        align = 'd';
+//        get_typlenbyvalalign(oid, &len, &byval, &align);
+    }
+} type_info_float8;
+
 static type_info INT4TI(INT4OID);
+static type_info_float8 FLOAT8TI(FLOAT8OID);
 
 AnyType matrix_densify_sfunc::run(AnyType & args)
 {

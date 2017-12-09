@@ -37,7 +37,12 @@ typedef struct __type_info{
 
     __type_info(Oid oid):oid(oid)
     {
-        madlib_get_typlenbyvalalign(oid, &len, &byval, &align);
+        len = 8 ;
+        byval = TRUE;
+        align = 'd';
+//        get_typlenbyvalalign(oid, &len, &byval, &align);
+//        elog(INFO, "float8 is %d, %d, %c", len , byval, align);
+
     }
 } type_info;
 

@@ -29,7 +29,11 @@ typedef struct __type_info{
 
     __type_info(Oid oid):oid(oid)
     {
-        madlib_get_typlenbyvalalign(oid, &len, &byval, &align);
+        len = 4 ;
+        byval = TRUE;
+        align = 'i';
+//        madlib_get_typlenbyvalalign(oid, &len, &byval, &align);
+//          get_typlenbyvalalign(oid, &len, &byval, &align);
     }
 } type_info;
 

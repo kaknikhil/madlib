@@ -34,11 +34,32 @@ typedef struct __type_info{
 
     __type_info(Oid oid):oid(oid)
     {
-        madlib_get_typlenbyvalalign(oid, &len, &byval, &align);
+        len = 4 ;
+        byval = TRUE;
+        align = 'i';
+//        get_typlenbyvalalign(oid, &len, &byval, &align);
+
     }
 } type_info;
+
+typedef struct __type_info_int8{
+    Oid oid;
+    int16_t len;
+    bool    byval;
+    char    align;
+
+    __type_info_int8(Oid oid):oid(oid)
+    {
+        len = 8 ;
+        byval = TRUE;
+        align = 'd';
+//        get_typlenbyvalalign(oid, &len, &byval, &align);
+
+    }
+} type_info_int8;
+
 static type_info INT4TI(INT4OID);
-static type_info INT8TI(INT8OID);
+static type_info_int8 INT8TI(INT8OID);
 
 /**
  * @brief This function samples a new topic for a word in a document based on

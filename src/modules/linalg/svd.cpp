@@ -53,7 +53,10 @@ typedef struct __type_info{
 
     __type_info(Oid oid):oid(oid)
     {
-        madlib_get_typlenbyvalalign(oid, &len, &byval, &align);
+        len = 8 ;
+        byval = TRUE;
+        align = 'd';
+//        madlib_get_typlenbyvalalign(oid, &len, &byval, &align);
     }
 } type_info;
 static type_info FLOAT8TI(FLOAT8OID);
