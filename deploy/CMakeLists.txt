@@ -95,6 +95,9 @@ elseif(IS_REDHAT)
   set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/rpm_post_uninstall.sh")
   set(CPACK_MONOLITHIC_INSTALL 1)
 elseif(IS_DEBIAN)
+# TODO make changes
+    #1. don't need CREATE_RPM_FOR_UBUNTU
+    #2. we won't have pre post and postrm scripts for deb gppkg
   if(NOT CREATE_RPM_FOR_UBUNTU)
     set(CPACK_PACKAGE_FILE_NAME
       "madlib${_PACKAGE_SUFFIX}-${MADLIB_VERSION_STRING}-${CMAKE_SYSTEM_NAME}")

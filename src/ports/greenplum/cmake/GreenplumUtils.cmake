@@ -18,6 +18,11 @@ function(define_greenplum_features IN_VERSION OUT_FEATURES)
 endfunction(define_greenplum_features)
 
 function(add_gppkg GPDB_VERSION GPDB_VARIANT GPDB_VARIANT_SHORT UPGRADE_SUPPORT)
+    # TODO make ubuntu gppkg
+        # 1. pass OS_TYPE
+        # 2. IF OS_TYPE == UBUNTU, then use the target `deb_gppkg` which is a new dir under deploy
+        # 3. IF OS_TYPE == RHEL, do the same as before
+
     string(TOLOWER ${GPDB_VERSION} GPDB_VERSION_LC)
     string(REPLACE "." "_" VERSION_ "${GPDB_VERSION}")
 
@@ -50,25 +55,37 @@ function(add_gppkg GPDB_VERSION GPDB_VARIANT GPDB_VARIANT_SHORT UPGRADE_SUPPORT)
         \"\${CMAKE_CURRENT_BINARY_DIR}/${GPDB_VERSION}/gppkg/gppkg_spec.yml\"
     )
 
-    if(GPPKG_BINARY AND RPMBUILD_BINARY)
-        add_custom_target(gppkg_${GPDB_VARIANT}_${VERSION_}
-            COMMAND cmake -E create_symlink \"\${MADLIB_GPPKG_RPM_SOURCE_DIR}\"
-                \"\${CPACK_PACKAGE_FILE_NAME}-gppkg\"
-            COMMAND \"\${RPMBUILD_BINARY}\" -bb SPECS/madlib.spec
-            COMMAND cmake -E rename \"RPMS/\${MADLIB_GPPKG_RPM_FILE_NAME}\"
-                \"gppkg/\${MADLIB_GPPKG_RPM_FILE_NAME}\"
-            COMMAND \"\${GPPKG_BINARY}\" --build gppkg
-            DEPENDS \"${CMAKE_BINARY_DIR}/\${CPACK_PACKAGE_FILE_NAME}.rpm\"
-            WORKING_DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/${GPDB_VERSION}\"
-            COMMENT \"Generating ${GPDB_VARIANT} ${GPDB_VERSION} gppkg installer...\"
-            VERBATIM
-        )
-    else(GPPKG_BINARY AND RPMBUILD_BINARY)
+    if(GPPKG_BINARY)
+        if(RHEL AND RPMBUILD_BINARY) # depend on RPMBUILD_BINARY only for rhel
+            add_custom_target(gppkg_${GPDB_VARIANT}_${VERSION_}
+                COMMAND cmake -E create_symlink \"\${MADLIB_GPPKG_RPM_SOURCE_DIR}\"
+                    \"\${CPACK_PACKAGE_FILE_NAME}-gppkg\"
+                COMMAND \"\${RPMBUILD_BINARY}\" -bb SPECS/madlib.spec
+                COMMAND cmake -E rename \"RPMS/\${MADLIB_GPPKG_RPM_FILE_NAME}\"
+                    \"gppkg/\${MADLIB_GPPKG_RPM_FILE_NAME}\"
+                COMMAND \"\${GPPKG_BINARY}\" --build gppkg
+                DEPENDS \"${CMAKE_BINARY_DIR}/\${CPACK_PACKAGE_FILE_NAME}.rpm\"
+                WORKING_DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/${GPDB_VERSION}\"
+                COMMENT \"Generating ${GPDB_VARIANT} ${GPDB_VERSION} gppkg installer...\"
+                VERBATIM
+            )
+        else(UBUNTU)
+            add_custom_target(gppkg_${GPDB_VARIANT}_${VERSION_}
+                # Somehow call make package on the DEB_gppkg folder
+                # move the deb file and the new gppkg spec file to the same folder i.e. build-dir/deploy/gppkg/gpdb_version/gppkg/.
+                COMMAND \"\${GPPKG_BINARY}\" --build gppkg
+                # Something similar to list(APPEND CPACK_GENERATOR(DEB)) in GreenplumUtils.cmake
+                DEPENDS \"DEB_gppkg\"
+                WORKING_DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/${GPDB_VERSION}\"
+                COMMENT \"Generating ${GPDB_VARIANT} ${GPDB_VERSION} gppkg installer...\"
+                VERBATIM
+            )
+    else(GPPKG_BINARY)
         add_custom_target(gppkg_${GPDB_VARIANT}_${VERSION_}
             COMMAND cmake -E echo \"Could not find gppkg and/or rpmbuild.\"
                 \"Please rerun cmake.\"
         )
-    endif(GPPKG_BINARY AND RPMBUILD_BINARY)
+    endif(GPPKG_BINARY)
 
     # Unfortunately, we cannot set a dependency to the built-in package target,
     # i.e., the following does not work:
