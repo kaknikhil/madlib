@@ -71,11 +71,13 @@ function(add_gppkg GPDB_VERSION GPDB_VARIANT GPDB_VARIANT_SHORT UPGRADE_SUPPORT)
             )
         else(UBUNTU)
             add_custom_target(gppkg_${GPDB_VARIANT}_${VERSION_}
+                #TODO
                 # Somehow call make package on the DEB_gppkg folder
                 # move the deb file and the new gppkg spec file to the same folder i.e. build-dir/deploy/gppkg/gpdb_version/gppkg/.
-                COMMAND \"\${GPPKG_BINARY}\" --build gppkg
                 # Something similar to list(APPEND CPACK_GENERATOR(DEB)) in GreenplumUtils.cmake
-                DEPENDS \"DEB_gppkg\"
+                # set flag to indicate to make package that the deb is to be compiled for gppkg
+                COMMAND make package -C /build/madlib/build_madlib_debug/
+                COMMAND \"\${GPPKG_BINARY}\" --build gppkg
                 WORKING_DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/${GPDB_VERSION}\"
                 COMMENT \"Generating ${GPDB_VARIANT} ${GPDB_VERSION} gppkg installer...\"
                 VERBATIM

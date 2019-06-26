@@ -80,6 +80,10 @@ set(CPACK_RPM_USER_BINARY_SPECFILE ${CMAKE_CURRENT_SOURCE_DIR}/madlib.spec.in)
 add_subdirectory(PackageMaker)
 add_subdirectory(PGXN)
 add_subdirectory(RPM)
+#TODO If called using `make package` then
+    #add_subdirectory(DEB)
+#else
+    #add_subdirectory(DEB_gppkg)
 add_subdirectory(DEB)
 # gppkg depends on macros from RPM!
 add_subdirectory(gppkg)
@@ -103,6 +107,8 @@ elseif(IS_DEBIAN)
       "madlib${_PACKAGE_SUFFIX}-${MADLIB_VERSION_STRING}-${CMAKE_SYSTEM_NAME}")
   endif(NOT CREATE_RPM_FOR_UBUNTU)
   set(CPACK_PACKAGE_VERSION ${MADLIB_VERSION_STRING})
+  #TODO use the same flag as above to point to DEB_gppkg dir instead of DEB.
+  #set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/DEB_gppkg/config;${CMAKE_CURRENT_SOURCE_DIR}/DEB_gppkg/templates")
   set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/DEB/config;${CMAKE_CURRENT_SOURCE_DIR}/DEB/templates;${CMAKE_CURRENT_SOURCE_DIR}/DEB/preinst;${CMAKE_CURRENT_SOURCE_DIR}/DEB/postinst;${CMAKE_CURRENT_SOURCE_DIR}/DEB/postrm")
 endif()
 include(CPack)
