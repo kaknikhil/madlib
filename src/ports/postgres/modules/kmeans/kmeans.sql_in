@@ -1120,6 +1120,26 @@ m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
     min_frac_reassigned
 )</pre>
  */
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeanspp(
+    rel_source VARCHAR,
+    expr_point VARCHAR,
+    output_table VARCHAR,
+    k INTEGER[],
+    fn_dist VARCHAR /*+ DEFAULT 'squared_dist_norm2' */,
+    agg_centroid VARCHAR /*+ DEFAULT 'avg' */,
+    max_num_iterations INTEGER /*+ DEFAULT 20 */,
+    min_frac_reassigned DOUBLE PRECISION /*+ DEFAULT 0.001 */,
+    seeding_sample_ratio DOUBLE PRECISION  /*+ DEFAULT 1.0 */,
+    k_selection_algorithm VARCHAR /*+ DEFAULT 'elbow' */
+) RETURNS VOID AS $$
+    PythonFunction(`kmeans', `auto_kmeans', `auto_kmeanspp')
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+
+
+
 CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeanspp(
     rel_source VARCHAR,
     expr_point VARCHAR,
