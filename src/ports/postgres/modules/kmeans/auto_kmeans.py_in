@@ -31,66 +31,105 @@ import plpy
 
 def validate():
 
-	pass
+    pass
 
 def set_defaults(k, k_selection_algorithm):
 
-	k = range(5,15)
-	k_selection_algorithm = 'elbow'
+    k = k if k is not None else range(5,15)
+    
+    k_selection_algorithm = (k_selection_algorithm 
+        if k_selection_algorithm is not None else'elbow')
 
-	return k, k_selection_algorithm
-
-
-def auto_kmeanspp(schema_madlib, rel_source, expr_point, output_table, k, 
-	fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
-	seeding_sample_ratio, k_selection_algorithm, **kwargs):
+    return k, k_selection_algorithm
 
 
-	validate()
+def auto_kmeans(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    k_selection_algorithm, seeding, seeding_sample_ratio=None, **kwargs):
 
-	k, k_selection_algorithm = set_defaults(k, k_selection_algorithm)
+    validate()
 
-	plpy.execute(""" 
-		CREATE TABLE {output_table} (		
-			k_val INTEGER, 
-			centroids	DOUBLE PRECISION[][],
-			cluster_variance	DOUBLE PRECISION[],
-			objective_fn	DOUBLE PRECISION,
-			frac_reassigned	DOUBLE PRECISION,
-			num_iterations	INTEGER)
-		""".format(**locals()))
+    k, k_selection_algorithm = set_defaults(k, k_selection_algorithm)
+
+    plpy.execute(""" 
+        CREATE TABLE {output_table} (       
+            k_val INTEGER, 
+            centroids   DOUBLE PRECISION[][],
+            cluster_variance    DOUBLE PRECISION[],
+            objective_fn    DOUBLE PRECISION,
+            frac_reassigned DOUBLE PRECISION,
+            num_iterations  INTEGER)
+        """.format(**locals()))
+
+    for current_k in k:
+
+        plpy.info("Executing k: {}".format(current_k))
+        if seeding is 'random':
+            plpy.execute("""
+                INSERT INTO {output_table}
+                SELECT {current_k} as k_val, * 
+                FROM madlib.kmeans_random('{rel_source}', 
+                                     '{expr_point}', 
+                                     {current_k},
+                                     '{fn_dist}',
+                                     '{agg_centroid}', 
+                                     {max_num_iterations}, 
+                                     {min_frac_reassigned});
+                """.format(**locals()))
+        else:
+            plpy.execute("""
+                INSERT INTO {output_table}
+                SELECT {current_k} as k_val, * 
+                FROM madlib.kmeanspp('{rel_source}', 
+                                     '{expr_point}', 
+                                     {current_k},
+                                     '{fn_dist}',
+                                     '{agg_centroid}', 
+                                     {max_num_iterations}, 
+                                     {min_frac_reassigned}, 
+                                     {seeding_sample_ratio});
+                """.format(**locals()))
 
 
-	for current_k in k:
-
-		plpy.execute("""
-
-        INSERT INTO {output_table}
-        SELECT {current_k} as k_val, * 
-        FROM madlib.kmeanspp('{rel_source}', '{expr_point}', {current_k},
-                       '{fn_dist}',
-                       '{agg_centroid}', {max_num_iterations}, 
-                       {min_frac_reassigned}, {seeding_sample_ratio});
-             """.format(**locals()))
-
-
-	intertia_list = plpy.execute("""
+    intertia_list = plpy.execute("""
              SELECT k_val, objective_fn from {output_table}
              """.format(**locals()))
 
-	inertia_dict = {}
-	for i in range(len(intertia_list)):
-	    inertia_dict[intertia_list[i]['k_val']] = intertia_list[i]['objective_fn']
+    inertia_dict = {}
+    for i in range(len(intertia_list)):
+        inertia_dict[intertia_list[i]['k_val']] = intertia_list[i]['objective_fn']
+        if intertia_list[i]['objective_fn'] == 0:
+            break
 
-	est_k = inertia_dict.keys()
-	est_inertia = inertia_dict.values()
+    est_k = inertia_dict.keys()
+    est_inertia = inertia_dict.values()
 
-	first_order=np.gradient(est_inertia)
-	second_order=np.gradient(first_order)
-	index_with_elbow=np.argmax(second_order)
+    first_order=np.gradient(est_inertia)
+    second_order=np.gradient(first_order)
+    index_with_elbow=np.argmax(second_order)
 
-	optimal_k = est_k[index_with_elbow]
-	plpy.info("elbow: {} {} {}".format(optimal_k, est_inertia, second_order))
+    optimal_k = est_k[index_with_elbow]
+    plpy.info("elbow: {} {} {}".format(optimal_k, est_inertia, second_order))
 
-	return
-	
+    return
+    
+
+def auto_kmeans_random(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    seeding_sample_ratio, k_selection_algorithm, **kwargs):
+
+    auto_kmeans(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    k_selection_algorithm, 'pp', seeding_sample_ratio)
+    
+    return
+
+def auto_kmeanspp(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    k_selection_algorithm, **kwargs):
+
+    auto_kmeans(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    k_selection_algorithm, 'random')
+    
+    return

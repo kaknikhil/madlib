@@ -999,7 +999,7 @@ BEGIN
     sampled_rel_source = MADLIB_SCHEMA.__unique_string();
     sampled_col_name = MADLIB_SCHEMA.__unique_string();
     IF (seeding_sample_ratio < 1.0) THEN
-        EXECUTE 'DROP TABLE IF EXISTS '||sampled_rel_source;
+        EXECUTE 'DROP TABLE IF EXISTS '||sampled_rel_source||' CASCADE';
         EXECUTE 'CREATE TEMP TABLE '||sampled_rel_source||' AS
             SELECT *
             FROM
@@ -1059,7 +1059,7 @@ BEGIN
     EXECUTE 'SET client_min_messages TO ' || oldClientMinMessages;
 
     IF (seeding_sample_ratio < 1.0) THEN
-        EXECUTE 'DROP TABLE IF EXISTS '||sampled_rel_source;
+        EXECUTE 'DROP TABLE IF EXISTS '||sampled_rel_source||' CASCADE';
     END IF;
 
     RETURN theResult;
@@ -1137,6 +1137,20 @@ CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeanspp(
 $$ LANGUAGE plpythonu VOLATILE
 m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
 
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeans_random(
+    rel_source VARCHAR,
+    expr_point VARCHAR,
+    output_table VARCHAR,
+    k INTEGER[],
+    fn_dist VARCHAR /*+ DEFAULT 'squared_dist_norm2' */,
+    agg_centroid VARCHAR /*+ DEFAULT 'avg' */,
+    max_num_iterations INTEGER /*+ DEFAULT 20 */,
+    min_frac_reassigned DOUBLE PRECISION /*+ DEFAULT 0.001 */,
+    k_selection_algorithm VARCHAR /*+ DEFAULT 'elbow' */
+) RETURNS VOID AS $$
+    PythonFunction(`kmeans', `auto_kmeans', `auto_kmeans_random')
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
 
 
 

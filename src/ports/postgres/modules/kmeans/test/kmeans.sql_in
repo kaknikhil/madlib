@@ -98,6 +98,11 @@ SELECT * FROM kmeanspp('kmeans_2d', 'array[x,y]', 'autokm_out', ARRAY[2,3,4,5,6,
 
 select * from autokm_out;
 
+DROP TABLE IF EXISTS autokm_out;
+SELECT * FROM kmeans_random('kmeans_2d', 'array[x,y]', 'autokm_out', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 'elbow');
+
+select * from autokm_out;
 
 DROP TABLE IF EXISTS km_sample CASCADE;
 DROP TABLE IF EXISTS centroids CASCADE;
