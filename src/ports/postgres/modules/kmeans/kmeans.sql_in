@@ -1121,7 +1121,7 @@ m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
 )</pre>
  */
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeanspp(
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeanspp_auto(
     rel_source VARCHAR,
     expr_point VARCHAR,
     output_table VARCHAR,
@@ -1133,11 +1133,11 @@ CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeanspp(
     seeding_sample_ratio DOUBLE PRECISION  /*+ DEFAULT 1.0 */,
     k_selection_algorithm VARCHAR /*+ DEFAULT 'elbow' */
 ) RETURNS VOID AS $$
-    PythonFunction(`kmeans', `auto_kmeans', `auto_kmeanspp')
+    PythonFunction(`kmeans', `kmeans_auto', `kmeanspp_auto')
 $$ LANGUAGE plpythonu VOLATILE
 m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
 
-CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeans_random(
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeans_random_auto(
     rel_source VARCHAR,
     expr_point VARCHAR,
     output_table VARCHAR,
@@ -1148,7 +1148,7 @@ CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.kmeans_random(
     min_frac_reassigned DOUBLE PRECISION /*+ DEFAULT 0.001 */,
     k_selection_algorithm VARCHAR /*+ DEFAULT 'elbow' */
 ) RETURNS VOID AS $$
-    PythonFunction(`kmeans', `auto_kmeans', `auto_kmeans_random')
+    PythonFunction(`kmeans', `kmeans_auto', `kmeans_random_auto')
 $$ LANGUAGE plpythonu VOLATILE
 m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
 

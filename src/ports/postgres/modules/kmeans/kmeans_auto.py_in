@@ -1,0 +1,180 @@
+# coding=utf-8
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+"""
+@file auto_kmeans.py_in
+
+@brief 
+
+"""
+
+
+import numpy as np
+import math
+import plpy
+from utilities.utilities import unique_string
+
+def validate():
+
+    pass
+
+def set_defaults(k, k_selection_algorithm):
+
+    k = k if k is not None else range(5,15)
+    
+    k_selection_algorithm = (k_selection_algorithm 
+        if k_selection_algorithm is not None else'elbow')
+
+    return k, k_selection_algorithm
+
+
+def kmeans_auto(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    k_selection_algorithm, seeding, seeding_sample_ratio=None, **kwargs):
+
+    validate()
+
+    k, k_selection_algorithm = set_defaults(k, k_selection_algorithm)
+    tmp_output_table = unique_string(desp='tmp_output_table')
+    silhouette = ""
+    elbow = ""
+
+    plpy.execute(""" 
+        CREATE TABLE {tmp_output_table} (       
+            k INTEGER, 
+            centroids   DOUBLE PRECISION[][],
+            cluster_variance    DOUBLE PRECISION[],
+            objective_fn    DOUBLE PRECISION,
+            frac_reassigned DOUBLE PRECISION,
+            num_iterations  INTEGER)
+        """.format(**locals()))
+
+    silhouette_vals = []
+
+    for current_k in k:
+
+        plpy.info("Executing k: {}".format(current_k))
+        if seeding is 'random':
+            plpy.execute("""
+                INSERT INTO {tmp_output_table}
+                SELECT {current_k} as k, * 
+                FROM madlib.kmeans_random('{rel_source}', 
+                                     '{expr_point}', 
+                                     {current_k},
+                                     '{fn_dist}',
+                                     '{agg_centroid}', 
+                                     {max_num_iterations}, 
+                                     {min_frac_reassigned});
+                """.format(**locals()))
+        else:
+            plpy.execute("""
+                INSERT INTO {tmp_output_table}
+                SELECT {current_k} as k, * 
+                FROM madlib.kmeanspp('{rel_source}', 
+                                     '{expr_point}', 
+                                     {current_k},
+                                     '{fn_dist}',
+                                     '{agg_centroid}', 
+                                     {max_num_iterations}, 
+                                     {min_frac_reassigned}, 
+                                     {seeding_sample_ratio});
+                """.format(**locals()))
+        
+        if k_selection_algorithm != 'elbow':
+
+            silhouette_query= """
+                SELECT * FROM madlib.simple_silhouette( 
+                    '{rel_source}',
+                    '{expr_point}',
+                    (SELECT centroids 
+                     FROM {tmp_output_table} 
+                     WHERE k = {current_k}),
+                    '{fn_dist}')
+                """.format(**locals())
+            silhouette_vals.append(
+                plpy.execute(silhouette_query)[0]['simple_silhouette'])
+
+    if k_selection_algorithm != 'elbow':
+
+        silhouette_vals_np = np.array(silhouette_vals)
+        optimal_sil =  k[np.argmax(silhouette_vals_np)]
+        plpy.info("silhouette: {} {} {}".format( 
+            optimal_sil,
+            max(silhouette_vals), 
+            silhouette_vals))
+        silhouette = ", {} AS silhouette".format(optimal_sil)
+
+    if k_selection_algorithm != 'silhouette':
+        intertia_list = plpy.execute("""
+                 SELECT k, objective_fn from {tmp_output_table}
+                 """.format(**locals()))
+
+        inertia_dict = {}
+
+        for i in range(1,len(intertia_list)-1):
+            inertia_dict[intertia_list[i]['k']] = intertia_list[i]['objective_fn']
+            if intertia_list[i]['objective_fn'] == 0:
+                break
+
+        est_k = inertia_dict.keys()
+        est_inertia = inertia_dict.values()
+
+        first_order=np.gradient(est_inertia)
+        second_order=np.gradient(first_order)
+        index_with_elbow=np.argmax(second_order)
+
+        optimal_elbow = est_k[index_with_elbow]
+        plpy.info("elbow: {} {} {}".format(optimal_elbow, est_inertia, second_order))
+        elbow = ", {} AS elbow".format(optimal_elbow)
+
+    optimal_k = (optimal_sil if k_selection_algorithm == 'silhouette' 
+                 else optimal_elbow)
+
+    plpy.execute("""
+        CREATE TABLE {output_table} AS
+        SELECT {tmp_output_table}.*, 
+               '{k_selection_algorithm}' AS selection_algorithm 
+               {elbow} 
+               {silhouette}
+        FROM {tmp_output_table}
+        WHERE k = {optimal_k}
+        """.format(**locals()))
+
+    return
+    
+
+def kmeans_random_auto(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    k_selection_algorithm, **kwargs):
+
+    kmeans_auto(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    k_selection_algorithm, 'random')
+    
+    return
+
+def kmeanspp_auto(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    seeding_sample_ratio, k_selection_algorithm, **kwargs):
+
+    kmeans_auto(schema_madlib, rel_source, expr_point, output_table, k, 
+    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+    k_selection_algorithm, 'pp', seeding_sample_ratio)
+    
+    return
