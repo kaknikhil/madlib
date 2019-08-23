@@ -171,7 +171,7 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
         index_with_elbow, second_order = _calculate_elbow(tmp_output_table)
 
         optimal_elbow = index_with_elbow
-        plpy.info("elbow: {} {} {}".format(optimal_elbow, est_inertia, second_order))
+        plpy.info("elbow: {} {}".format(optimal_elbow, second_order))
         elbow = ", {} AS elbow".format(max(second_order))
 
     optimal_k = (optimal_sil if k_selection_algorithm == 'silhouette'
