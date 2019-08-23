@@ -109,14 +109,20 @@ SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[
                        'MADLIB_SCHEMA.avg', 20, 0.001, 'elbow');
 
 select * from autokm_out;
-
 DROP TABLE IF EXISTS autokm_out;
-SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8]);
+SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 'el');
 
 select * from autokm_out;
 
 DROP TABLE IF EXISTS autokm_out;
-SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
+SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[5]);
+
+select * from autokm_out;
+
+-- Unordered k list test
+DROP TABLE IF EXISTS autokm_out;
+SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[12,3,5,6,8], 'MADLIB_SCHEMA.squared_dist_norm2',
                        'MADLIB_SCHEMA.avg', 20, 0.001, 'silhouette');
 
 select * from autokm_out;
@@ -124,6 +130,23 @@ select * from autokm_out;
 DROP TABLE IF EXISTS autokm_out;
 SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
                        'MADLIB_SCHEMA.avg', 20, 0.001, 'silhouette');
+
+select * from autokm_out;
+
+DROP TABLE IF EXISTS autokm_out;
+SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 'sil');
+
+select * from autokm_out;
+
+DROP TABLE IF EXISTS autokm_out;
+SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 'both');
+
+select * from autokm_out;
+DROP TABLE IF EXISTS autokm_out;
+SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 'b');
 
 select * from autokm_out;
 DROP TABLE IF EXISTS km_sample CASCADE;
