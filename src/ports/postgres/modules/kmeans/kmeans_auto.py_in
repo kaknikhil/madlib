@@ -34,23 +34,39 @@ def validate():
 
     pass
 
-def set_defaults(k, k_selection_algorithm):
+def set_defaults(schema_madlib, fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, k_selection_algorithm, seeding, seeding_sample_ratio):
 
-    k = k if k is not None else range(5,15)
-    
+    fn_dist = (fn_dist if fn_dist is not None 
+               else '{}.squared_dist_norm2'.format(schema_madlib))
+    agg_centroid = (agg_centroid if agg_centroid is not None 
+                    else '{}.avg'.format(schema_madlib))
+    max_num_iterations = (max_num_iterations if max_num_iterations is not None
+                          else 20)
+    min_frac_reassigned = (min_frac_reassigned if min_frac_reassigned is not None 
+                           else 0.001)
+
     k_selection_algorithm = (k_selection_algorithm 
-        if k_selection_algorithm is not None else'elbow')
+                             if k_selection_algorithm is not None else 'elbow')
 
-    return k, k_selection_algorithm
+    if seeding is 'pp':
+        seeding_sample_ratio = (seeding_sample_ratio 
+                                if seeding_sample_ratio is not None else 1.0)
+    return (fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+            k_selection_algorithm, seeding_sample_ratio)
 
 
-def kmeans_auto(schema_madlib, rel_source, expr_point, output_table, k, 
-    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
-    k_selection_algorithm, seeding, seeding_sample_ratio=None, **kwargs):
+def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k, 
+    fn_dist=None, agg_centroid=None, max_num_iterations=None, 
+    min_frac_reassigned=None, k_selection_algorithm=None, seeding=None,
+    seeding_sample_ratio=None, **kwargs):
 
     validate()
 
-    k, k_selection_algorithm = set_defaults(k, k_selection_algorithm)
+    (fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
+     k_selection_algorithm, seeding_sample_ratio) = set_defaults(
+        schema_madlib, fn_dist, agg_centroid, max_num_iterations, 
+        min_frac_reassigned, k_selection_algorithm, seeding, 
+        seeding_sample_ratio)
     tmp_output_table = unique_string(desp='tmp_output_table')
     silhouette = ""
     elbow = ""
@@ -159,21 +175,22 @@ def kmeans_auto(schema_madlib, rel_source, expr_point, output_table, k,
     return
     
 
-def kmeans_random_auto(schema_madlib, rel_source, expr_point, output_table, k, 
-    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
-    k_selection_algorithm, **kwargs):
+def kmeans_random_auto(schema_madlib, rel_source, output_table, expr_point, k, 
+    fn_dist=None, agg_centroid=None, max_num_iterations=None, 
+    min_frac_reassigned=None, k_selection_algorithm=None, **kwargs):
 
-    kmeans_auto(schema_madlib, rel_source, expr_point, output_table, k, 
+    kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k, 
     fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
     k_selection_algorithm, 'random')
     
     return
 
-def kmeanspp_auto(schema_madlib, rel_source, expr_point, output_table, k, 
-    fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
-    seeding_sample_ratio, k_selection_algorithm, **kwargs):
+def kmeanspp_auto(schema_madlib, rel_source, output_table, expr_point, k, 
+    fn_dist=None, agg_centroid=None, max_num_iterations=None, 
+    min_frac_reassigned=None, seeding_sample_ratio=None, 
+    k_selection_algorithm=None, **kwargs):
 
-    kmeans_auto(schema_madlib, rel_source, expr_point, output_table, k, 
+    kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k, 
     fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, 
     k_selection_algorithm, 'pp', seeding_sample_ratio)
     
