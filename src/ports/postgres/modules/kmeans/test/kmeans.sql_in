@@ -91,65 +91,97 @@ SELECT * FROM kmeans('kmeans_2d', 'array[x,y]', 'centroids', 'array[x,y]');
 SELECT * FROM kmeanspp('kmeans_2d', 'array[x,y]', 10);
 SELECT * FROM kmeans_random('kmeans_2d', 'arRAy [ x,y]', 10);
 
+\x on
 
-DROP TABLE IF EXISTS autokm_out;
+-- Test kmeanspp_auto
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeanspp_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
                        'MADLIB_SCHEMA.avg', 20, 0.001, 0.1, 'elbow');
 
-select * from autokm_out;
+SELECT * FROM autokm_out_summary;
+SELECT assert(elbow > 0, 'kmeanspp_auto: incorrect elbow value') FROM autokm_out_summary;
 
-DROP TABLE IF EXISTS autokm_out;
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
+SELECT * FROM kmeanspp_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 0.1, 'silhouette');
+
+SELECT * FROM autokm_out_summary;
+SELECT assert(k > 6, 'kmeanspp_auto: incorrect optimal k value for kmeanspp silhouette') FROM autokm_out_summary;
+
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
+SELECT * FROM kmeanspp_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 0.1, 'both');
+
+SELECT * FROM autokm_out_summary;
+SELECT assert(elbow > 0, 'kmeanspp_auto: incorrect elbow value') FROM autokm_out_summary;
+SELECT assert(silhouette > 0, 'kmeanspp_auto: incorrect silhouette value') FROM autokm_out_summary;
+
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeanspp_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8]);
+SELECT * FROM autokm_out_summary;
+SELECT assert(elbow > 0, 'kmeanspp_auto: incorrect elbow value') FROM autokm_out_summary;
 
-select * from autokm_out;
 
-
-DROP TABLE IF EXISTS autokm_out;
+-- Test kmeans_random_auto
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
                        'MADLIB_SCHEMA.avg', 20, 0.001, 'elbow');
+SELECT * FROM autokm_out_summary;
+SELECT assert(elbow > 0, 'kmeanspp_auto: incorrect elbow value') FROM autokm_out_summary;
 
-select * from autokm_out;
-DROP TABLE IF EXISTS autokm_out;
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
-                       'MADLIB_SCHEMA.avg', 20, 0.001, 'el');
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 'El');
+SELECT * FROM autokm_out_summary;
+SELECT assert(elbow > 0, 'kmeanspp_auto: incorrect elbow value') FROM autokm_out_summary;
 
-select * from autokm_out;
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
+SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[5,6,7]);
+SELECT * FROM autokm_out_summary;
+SELECT assert(elbow > 0, 'kmeanspp_auto: incorrect elbow value') FROM autokm_out_summary;
 
-DROP TABLE IF EXISTS autokm_out;
-SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[5]);
-
-select * from autokm_out;
 
 -- Unordered k list test
-DROP TABLE IF EXISTS autokm_out;
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[12,3,5,6,8], 'MADLIB_SCHEMA.squared_dist_norm2',
                        'MADLIB_SCHEMA.avg', 20, 0.001, 'silhouette');
 
-select * from autokm_out;
+SELECT * FROM autokm_out_summary;
+SELECT assert(silhouette > 0, 'kmeanspp_auto: incorrect silhouette value') FROM autokm_out_summary;
 
-DROP TABLE IF EXISTS autokm_out;
+
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
-                       'MADLIB_SCHEMA.avg', 20, 0.001, 'silhouette');
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 'silhouetTe');
 
-select * from autokm_out;
+SELECT * FROM autokm_out_summary;
+SELECT assert(silhouette > 0, 'kmeanspp_auto: incorrect silhouette value') FROM autokm_out_summary;
 
-DROP TABLE IF EXISTS autokm_out;
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
-                       'MADLIB_SCHEMA.avg', 20, 0.001, 'sil');
+                       'MADLIB_SCHEMA.avg', 20, 0.001, 'siL');
 
-select * from autokm_out;
+SELECT * FROM autokm_out_summary;
+SELECT assert(silhouette > 0, 'kmeanspp_auto: incorrect silhouette value') FROM autokm_out_summary;
 
-DROP TABLE IF EXISTS autokm_out;
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
                        'MADLIB_SCHEMA.avg', 20, 0.001, 'both');
 
-select * from autokm_out;
-DROP TABLE IF EXISTS autokm_out;
+SELECT * FROM autokm_out_summary;
+SELECT assert(elbow > 0, 'kmeanspp_auto: incorrect elbow value') FROM autokm_out_summary;
+SELECT assert(silhouette > 0, 'kmeanspp_auto: incorrect silhouette value') FROM autokm_out_summary;
+
+
+DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeans_random_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
                        'MADLIB_SCHEMA.avg', 20, 0.001, 'b');
 
-select * from autokm_out;
+SELECT * FROM autokm_out_summary;
+SELECT assert(elbow > 0, 'kmeanspp_auto: incorrect elbow value') FROM autokm_out_summary;
+SELECT assert(silhouette > 0, 'kmeanspp_auto: incorrect silhouette value') FROM autokm_out_summary;
+
+\x off
 DROP TABLE IF EXISTS km_sample CASCADE;
 DROP TABLE IF EXISTS centroids CASCADE;
 DROP TABLE IF EXISTS kmeans_2d CASCADE;
-aaa

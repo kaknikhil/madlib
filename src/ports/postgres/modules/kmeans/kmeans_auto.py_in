@@ -31,30 +31,12 @@ import plpy
 from utilities.utilities import _assert
 from utilities.utilities import unique_string
 from utilities.validate_args import output_tbl_valid
+from utilities.validate_args import get_selection_name
 
 ELBOW = 'elbow'
 SILHOUETTE = 'silhouette'
 BOTH = 'both'
 
-def _get_selection_name(algorithm):
-    # TODO: Add unit test
-    # TODO: move to utils
-    if not algorithm:
-        algorithm = ELBOW
-    else:
-        supported_algorithms = [ELBOW, SILHOUETTE, BOTH]
-        try:
-            # allow user to specify a prefix substring of
-            # supported algorithms. This works because the supported
-            # algorithms have unique prefixes.
-            algorithm = next(x for x in supported_algorithms
-                               if x.startswith(algorithm))
-        except StopIteration:
-            # next() returns a StopIteration if no element found
-            plpy.error("kmeans_auto: Invalid selection algorithm:"
-                       "{0}. Supported selection algorithms are ({1})"
-                       .format(algorithm, ','.join(sorted(supported_algorithms))))
-    return algorithm
 
 def _validate(output_table, k):
 
@@ -62,6 +44,7 @@ def _validate(output_table, k):
     output_tbl_valid(output_table+'_summary', "kmeans_auto")
 
     _assert(k, "kmeans_auto: k cannot be NULL.")
+    _assert(len(k)>1, "kmeans_auto: there has to be more than 1 k values to consider.")
     _assert(min(k)>1, "kmeans_auto: the minimum k value has to be > 1.")
 
 
@@ -76,7 +59,8 @@ def set_defaults(schema_madlib, fn_dist, agg_centroid, max_num_iterations, min_f
     min_frac_reassigned = (min_frac_reassigned if min_frac_reassigned is not None
                            else 0.001)
 
-    k_selection_algorithm = _get_selection_name(k_selection_algorithm)
+    k_selection_algorithm = get_selection_name(k_selection_algorithm, ELBOW,
+        [ELBOW, SILHOUETTE, BOTH], 'auto_kmeans')
 
     if seeding is 'pp':
         seeding_sample_ratio = (seeding_sample_ratio
@@ -161,19 +145,13 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
 
         silhouette_vals_np = np.array(silhouette_vals)
         optimal_sil =  k[np.argmax(silhouette_vals_np)]
-        plpy.info("silhouette: {} {} {}".format(
-            optimal_sil,
-            max(silhouette_vals),
-            silhouette_vals))
         silhouette = ", {} AS silhouette".format(max(silhouette_vals))
 
     # If the selection is elbow or both, calculate elbow
     if k_selection_algorithm != 'silhouette':
 
         index_with_elbow, second_order = _calculate_elbow(output_table)
-
         optimal_elbow = index_with_elbow
-        plpy.info("elbow: {} {}".format(optimal_elbow, second_order))
         elbow = ", {} AS elbow".format(max(second_order))
 
     optimal_k = (optimal_sil if k_selection_algorithm == 'silhouette'
