@@ -106,7 +106,7 @@ SELECT * FROM kmeanspp_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4
                        'MADLIB_SCHEMA.avg', 20, 0.001, 0.1, 'silhouette');
 
 SELECT * FROM autokm_out_summary;
-SELECT assert(k > 6, 'kmeanspp_auto: incorrect optimal k value for kmeanspp silhouette') FROM autokm_out_summary;
+SELECT assert(silhouette > 0, 'kmeanspp_auto: incorrect silhouette value') FROM autokm_out_summary;
 
 DROP TABLE IF EXISTS autokm_out,autokm_out_summary;
 SELECT * FROM kmeanspp_auto('kmeans_2d', 'autokm_out', 'array[x,y]', ARRAY[2,3,4,5,6,7,8], 'MADLIB_SCHEMA.squared_dist_norm2',
