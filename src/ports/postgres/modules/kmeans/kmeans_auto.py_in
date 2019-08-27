@@ -104,7 +104,7 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
             plpy.execute("""
                 INSERT INTO {output_table}
                 SELECT {current_k} as k, *
-                FROM madlib.kmeans_random('{rel_source}',
+                FROM {schema_madlib}.kmeans_random('{rel_source}',
                                      '{expr_point}',
                                      {current_k},
                                      '{fn_dist}',
@@ -116,7 +116,7 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
             plpy.execute("""
                 INSERT INTO {output_table}
                 SELECT {current_k} as k, *
-                FROM madlib.kmeanspp('{rel_source}',
+                FROM {schema_madlib}.kmeanspp('{rel_source}',
                                      '{expr_point}',
                                      {current_k},
                                      '{fn_dist}',
@@ -129,7 +129,7 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
         if k_selection_algorithm != 'elbow':
 
             silhouette_query= """
-                SELECT * FROM madlib.simple_silhouette(
+                SELECT * FROM {schema_madlib}.simple_silhouette(
                     '{rel_source}',
                     '{expr_point}',
                     (SELECT centroids
