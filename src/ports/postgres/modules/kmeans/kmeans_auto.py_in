@@ -160,7 +160,7 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
     plpy.execute("""
         CREATE TABLE {output_table}_summary AS
         SELECT {output_table}.*,
-               '{k_selection_algorithm}' AS selection_algorithm
+               '{k_selection_algorithm}'::VARCHAR AS selection_algorithm
                {elbow}
                {silhouette}
         FROM {output_table}
