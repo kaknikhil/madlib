@@ -97,12 +97,12 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
         schema_madlib, fn_dist, agg_centroid, max_num_iterations,
         min_frac_reassigned, k_selection_algorithm, seeding,
         seeding_sample_ratio)
-    tmp_output_table = unique_string(desp='tmp_output_table')
+    # tmp_output_table = unique_string(desp='tmp_output_table')
     silhouette = ""
     elbow = ""
 
     plpy.execute("""
-        CREATE TABLE {tmp_output_table} (
+        CREATE TABLE {output_table} (
             k INTEGER,
             centroids   DOUBLE PRECISION[][],
             cluster_variance    DOUBLE PRECISION[],
@@ -118,7 +118,7 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
         plpy.info("Executing k: {}".format(current_k))
         if seeding is 'random':
             plpy.execute("""
-                INSERT INTO {tmp_output_table}
+                INSERT INTO {output_table}
                 SELECT {current_k} as k, *
                 FROM madlib.kmeans_random('{rel_source}',
                                      '{expr_point}',
@@ -130,7 +130,7 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
                 """.format(**locals()))
         else:
             plpy.execute("""
-                INSERT INTO {tmp_output_table}
+                INSERT INTO {output_table}
                 SELECT {current_k} as k, *
                 FROM madlib.kmeanspp('{rel_source}',
                                      '{expr_point}',
@@ -149,13 +149,14 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
                     '{rel_source}',
                     '{expr_point}',
                     (SELECT centroids
-                     FROM {tmp_output_table}
+                     FROM {output_table}
                      WHERE k = {current_k}),
                     '{fn_dist}')
                 """.format(**locals())
             silhouette_vals.append(
                 plpy.execute(silhouette_query)[0]['simple_silhouette'])
 
+    # If the selection is silhouette or both, calculate silhouette
     if k_selection_algorithm != 'elbow':
 
         silhouette_vals_np = np.array(silhouette_vals)
@@ -166,9 +167,10 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
             silhouette_vals))
         silhouette = ", {} AS silhouette".format(max(silhouette_vals))
 
+    # If the selection is elbow or both, calculate elbow
     if k_selection_algorithm != 'silhouette':
 
-        index_with_elbow, second_order = _calculate_elbow(tmp_output_table)
+        index_with_elbow, second_order = _calculate_elbow(output_table)
 
         optimal_elbow = index_with_elbow
         plpy.info("elbow: {} {}".format(optimal_elbow, second_order))
@@ -178,22 +180,22 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
                  else optimal_elbow)
 
     plpy.execute("""
-        CREATE TABLE {output_table} AS
-        SELECT {tmp_output_table}.*,
+        CREATE TABLE {output_table}_summary AS
+        SELECT {output_table}.*,
                '{k_selection_algorithm}' AS selection_algorithm
                {elbow}
                {silhouette}
-        FROM {tmp_output_table}
+        FROM {output_table}
         WHERE k = {optimal_k}
         """.format(**locals()))
 
     return
 
-def _calculate_elbow(tmp_output_table):
+def _calculate_elbow(output_table):
 
     # We have to get the values in ordered fashion because the elbow is only defined for ordered values.
     inertia_result = plpy.execute("""
-                 SELECT k, objective_fn FROM {tmp_output_table} ORDER BY k ASC
+                 SELECT k, objective_fn FROM {output_table} ORDER BY k ASC
                  """.format(**locals()))
     k = [ i['k'] for i in inertia_result ]
     inertia_list = [ i['objective_fn'] for i in inertia_result ]
