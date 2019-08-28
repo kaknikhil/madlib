@@ -31,7 +31,7 @@ import plpy
 from utilities.utilities import _assert
 from utilities.utilities import unique_string
 from utilities.validate_args import output_tbl_valid
-from utilities.validate_args import get_selection_name
+from utilities.validate_args import get_algorihtm_name
 
 ELBOW = 'elbow'
 SILHOUETTE = 'silhouette'
@@ -59,7 +59,7 @@ def set_defaults(schema_madlib, fn_dist, agg_centroid, max_num_iterations, min_f
     min_frac_reassigned = (min_frac_reassigned if min_frac_reassigned is not None
                            else 0.001)
 
-    k_selection_algorithm = get_selection_name(k_selection_algorithm, ELBOW,
+    k_selection_algorithm = get_algorihtm_name(k_selection_algorithm, ELBOW,
         [ELBOW, SILHOUETTE, BOTH], 'auto_kmeans')
 
     if seeding is 'pp':

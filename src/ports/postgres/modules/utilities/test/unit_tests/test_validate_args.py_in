@@ -113,21 +113,21 @@ class ValidateArgsTestCase(unittest.TestCase):
             self.subject.input_tbl_valid("foo", "unittest_module")
         self.assertNotIn('custom exception', str(error.exception))
 
-    def test_get_selection_name(self):
-        self.assertEqual('abc', self.subject.get_selection_name(
+    def test_get_algorihtm_name(self):
+        self.assertEqual('abc', self.subject.get_algorihtm_name(
             'abc', 'aaa', ['aaa','abc','bcd'], 'qwerty'))
-        self.assertEqual('aaa', self.subject.get_selection_name(
+        self.assertEqual('aaa', self.subject.get_algorihtm_name(
             'aaa', 'aaa', ['aaa','abc','bcd'], 'qwerty'))
-        self.assertEqual('aaa', self.subject.get_selection_name(
+        self.assertEqual('aaa', self.subject.get_algorihtm_name(
             'aa', 'aaa', ['aaa','abc','bcd'], 'qwerty'))
-        self.assertEqual('bcd', self.subject.get_selection_name(
+        self.assertEqual('bcd', self.subject.get_algorihtm_name(
             'bc', 'aaa', ['aaa','abc','bcd'], 'qwerty'))
 
         # If two options satisfy the given selectyion,
         # pick the first one from the list
-        self.assertEqual('aaa', self.subject.get_selection_name(
+        self.assertEqual('aaa', self.subject.get_algorihtm_name(
             'a', 'aaa', ['aaa','abc','bcd'], 'qwerty'))
-        self.assertEqual('aqq', self.subject.get_selection_name(
+        self.assertEqual('aqq', self.subject.get_algorihtm_name(
             'a', 'aaa', ['aqq','abc','bcd'], 'qwerty'))
 
 if __name__ == '__main__':
