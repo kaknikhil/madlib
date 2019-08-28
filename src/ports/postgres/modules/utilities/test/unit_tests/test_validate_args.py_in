@@ -126,9 +126,9 @@ class ValidateArgsTestCase(unittest.TestCase):
         # If two options satisfy the given selectyion,
         # pick the first one from the list
         self.assertEqual('aaa', self.subject.get_algorihtm_name(
-            'a', 'aaa', ['aaa','abc','bcd'], 'qwerty'))
+            'a', 'abc', ['aaa','abc','bcd'], 'qwerty'))
         self.assertEqual('aqq', self.subject.get_algorihtm_name(
-            'a', 'aaa', ['aqq','abc','bcd'], 'qwerty'))
+            'a', 'abc', ['aqq','abc','bcd'], 'qwerty'))
 
 if __name__ == '__main__':
     unittest.main()
