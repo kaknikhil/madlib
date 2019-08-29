@@ -50,7 +50,7 @@ from utilities.validate_args import input_tbl_valid, output_tbl_valid
 from utilities.validate_args import is_col_array
 from utilities.validate_args import is_var_valid
 from utilities.validate_args import quote_ident
-from utilities.validate_args import get_algorihtm_name
+from utilities.validate_args import get_algorithm_name
 
 WEIGHT_FOR_ZERO_DIST = 1e107
 BRUTE_FORCE = 'brute_force'
@@ -471,7 +471,7 @@ def knn(schema_madlib, point_source, point_column_name, point_id,
         if k is None:
             k = 1
 
-        algorithm = get_algorihtm_name(algorithm, BRUTE_FORCE,
+        algorithm = get_algorithm_name(algorithm, BRUTE_FORCE,
             [BRUTE_FORCE, KD_TREE], 'kNN')
 
         # Default values for depth and leaf nodes
