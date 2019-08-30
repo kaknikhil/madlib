@@ -177,7 +177,7 @@ def _calculate_elbow(output_table):
                  """.format(**locals()))
     k = [ i['k'] for i in inertia_result ]
     inertia_list = [ i['objective_fn'] for i in inertia_result ]
-
+    inertia_list = np.array(inertia_list)
     #TODO: what to do if optimal is the very first (or last) value?
     first_order=np.gradient(inertia_list, k)
     second_order=np.gradient(first_order, k)
