@@ -51,9 +51,9 @@ def _validate(output_table, k):
 def set_defaults(schema_madlib, fn_dist, agg_centroid, max_num_iterations, min_frac_reassigned, k_selection_algorithm, seeding, seeding_sample_ratio):
 
     fn_dist = (fn_dist if fn_dist is not None
-               else '{}.squared_dist_norm2'.format(schema_madlib))
+               else '{0}.squared_dist_norm2'.format(schema_madlib))
     agg_centroid = (agg_centroid if agg_centroid is not None
-                    else '{}.avg'.format(schema_madlib))
+                    else '{0}.avg'.format(schema_madlib))
     max_num_iterations = (max_num_iterations if max_num_iterations is not None
                           else 20)
     min_frac_reassigned = (min_frac_reassigned if min_frac_reassigned is not None
@@ -99,7 +99,7 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
 
     for current_k in k:
 
-        plpy.info("Executing k: {}".format(current_k))
+        plpy.info("Executing k: {0}".format(current_k))
         if seeding is 'random':
             plpy.execute("""
                 INSERT INTO {output_table}
@@ -145,14 +145,14 @@ def kmeans_auto(schema_madlib, rel_source, output_table, expr_point, k,
 
         silhouette_vals_np = np.array(silhouette_vals)
         optimal_sil =  k[np.argmax(silhouette_vals_np)]
-        silhouette = ", {} AS silhouette".format(max(silhouette_vals))
+        silhouette = ", {0} AS silhouette".format(max(silhouette_vals))
 
     # If the selection is elbow or both, calculate elbow
     if k_selection_algorithm != 'silhouette':
 
         index_with_elbow, second_order = _calculate_elbow(output_table)
         optimal_elbow = index_with_elbow
-        elbow = ", {} AS elbow".format(max(second_order))
+        elbow = ", {0} AS elbow".format(max(second_order))
 
     optimal_k = (optimal_sil if k_selection_algorithm == 'silhouette'
                  else optimal_elbow)
