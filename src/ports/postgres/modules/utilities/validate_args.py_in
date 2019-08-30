@@ -748,7 +748,7 @@ def get_algorithm_name(algorithm, default, supported_algorithms, module):
                                if x.startswith(algorithm))
         except StopIteration:
             # next() returns a StopIteration if no element found
-            plpy.error("{0}: Invalid algorithm:"
+            plpy.error("{0} Error: Invalid algorithm: "
                        "{1}. Supported algorithms are ({2})"
                        .format(module, algorithm,
                         ','.join(sorted(supported_algorithms))))
