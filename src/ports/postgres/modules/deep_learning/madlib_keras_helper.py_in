@@ -52,7 +52,7 @@ DEFAULT_NORMALIZING_CONST = 1.0
 
 # Prepend a dimension to np arrays using expand_dims.
 def expand_input_dims(input_data):
-    input_data = np_array_float32(input_data)
+    input_data = np.array(input_data, dtype=np.float32)
     input_data = np.expand_dims(input_data, axis=0)
     return input_data
 
@@ -64,7 +64,6 @@ def np_array_float32(var, var_shape):
 
 def np_array_int16(var, var_shape):
     arr = np.frombuffer(var, dtype=np.int16)
-    plpy.info(arr)
     arr.shape = parse_shape(var_shape)
     return arr
 
