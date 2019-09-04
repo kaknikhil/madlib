@@ -23,11 +23,6 @@ import plpy
 import sys
 import time
 
-# Do not remove `import keras` although it's not directly used in this file.
-# For ex if the user passes in the optimizer as keras.optimizers.SGD instead of just
-# SGD, then without this import this python file won't find the SGD module
-import keras
-
 from keras import backend as K
 from keras.layers import *
 from keras.models import *
@@ -633,7 +628,7 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
         loss = res
         metric = 0
 
-    image_count = len(dependent_var)
+    image_count = len(y_val)
 
     agg_image_count += image_count
     agg_loss += (image_count * loss)
