@@ -413,6 +413,7 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
         agg_image_count = madlib_keras_serializer.get_image_count_from_state(state)
 
     # Prepare the data
+    plpy.info("start the transition")
     x_train = np_array_float32(independent_var, independent_var_shape)
     y_train = np_array_int16(dependent_var, dependent_var_shape)
 
@@ -577,6 +578,8 @@ def get_loss_metric_from_keras_eval(schema_madlib, table, compile_params,
         select ({schema_madlib}.internal_keras_evaluate(
                                             {mb_dep_var_col},
                                             {mb_indep_var_col},
+                                            {mb_dep_var_col}_shape,
+                                            {mb_indep_var_col}_shape,
                                             $MAD${model_arch}$MAD$,
                                             $1,
                                             {compile_params},
@@ -593,6 +596,7 @@ def get_loss_metric_from_keras_eval(schema_madlib, table, compile_params,
     return loss_metric
 
 def internal_keras_eval_transition(state, dependent_var, independent_var,
+                                   dependent_var_shape, independent_var_shape,
                                    model_architecture, serialized_weights, compile_params,
                                    current_seg_id, seg_ids, images_per_seg,
                                    gpus_per_host, segments_per_host, **kwargs):
@@ -615,8 +619,8 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
         # Same model every time, no need to re-compile or update weights
         model = SD['segment_model']
 
-    x_val = np_array_float32(independent_var)
-    y_val = np_array_int16(dependent_var)
+    x_val = np_array_float32(independent_var, independent_var_shape)
+    y_val = np_array_int16(dependent_var, dependent_var_shape)
 
     with K.tf.device(device_name):
         res = model.evaluate(x_val, y_val)
