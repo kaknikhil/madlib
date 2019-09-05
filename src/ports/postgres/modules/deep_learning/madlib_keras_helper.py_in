@@ -18,7 +18,6 @@
 # under the License.
 
 import numpy as np
-from madlib_keras_wrapper import parse_shape
 from utilities.utilities import is_platform_pg
 import plpy
 
@@ -183,4 +182,8 @@ def get_image_count_per_seg_for_non_minibatched_data_from_db(table_name):
     images_per_seg = [int(image["images_per_seg"]) for image in images_per_seg]
     return gp_segment_id_col, seg_ids, images_per_seg
 
-
+def parse_shape(shape):
+    a = shape.split(':')
+    b = [a.split(']')[0] for a in a[1:]]
+    c = [int(b) for b in b]
+    return c

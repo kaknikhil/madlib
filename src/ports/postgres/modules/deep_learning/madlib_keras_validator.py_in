@@ -32,6 +32,7 @@ from madlib_keras_helper import NORMALIZING_CONST_COLNAME
 from madlib_keras_helper import MINIBATCH_OUTPUT_DEPENDENT_COLNAME_DL
 from madlib_keras_helper import MINIBATCH_OUTPUT_INDEPENDENT_COLNAME_DL
 from madlib_keras_helper import METRIC_TYPE_COLNAME
+from madlib_keras_helper import parse_shape
 
 from utilities.minibatch_validation import validate_dependent_var_for_minibatch
 from utilities.utilities import _assert
@@ -45,7 +46,6 @@ from utilities.validate_args import columns_exist_in_table
 from utilities.validate_args import get_expr_type
 from utilities.validate_args import input_tbl_valid
 from utilities.validate_args import output_tbl_valid
-from madlib_keras_wrapper import parse_shape
 from madlib_keras_wrapper import parse_and_validate_fit_params
 from madlib_keras_wrapper import parse_and_validate_compile_params
 
