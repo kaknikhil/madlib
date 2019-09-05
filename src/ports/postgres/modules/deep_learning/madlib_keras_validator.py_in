@@ -34,7 +34,7 @@ from madlib_keras_helper import MINIBATCH_OUTPUT_INDEPENDENT_COLNAME_DL
 from madlib_keras_helper import METRIC_TYPE_COLNAME
 from madlib_keras_helper import parse_shape
 
-from utilities.minibatch_validation import validate_dependent_var_for_minibatch
+from utilities.minibatch_validation import validate_bytea_var_for_minibatch
 from utilities.utilities import _assert
 from utilities.utilities import add_postfix
 from utilities.utilities import is_var_valid
@@ -268,8 +268,8 @@ class FitInputValidator:
 
         # Source table and validation tables must have the same schema
         self._validate_input_table(self.source_table)
-        validate_dependent_var_for_minibatch(self.source_table,
-                                             self.dependent_varname)
+        validate_bytea_var_for_minibatch(self.source_table,
+                                         self.dependent_varname)
 
         self._validate_validation_table()
         InputValidator.validate_model_arch_table(self.module_name, self.model_arch_table,
