@@ -473,6 +473,14 @@ SELECT training_preprocessor_dl(
   3 -- num_classes
   );
 
+-- assert that we reset the value of gp_autostats_mode_in_functions guc
+--assert that the output table has stats populated
+show gp_autostats_mode_in_functions;
+
+select assert (relpages > 0 and reltuples >0 , 'error')
+from pg_class where relname='data_preprocessor_input_batch';
+
+lksdjfds
 -- class_values must be '{NULL,NULL,NULL}' where the first NULL
 -- is for the class label seen in data, and the other two NULLs
 -- are added as num_classes=3.
