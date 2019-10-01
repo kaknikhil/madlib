@@ -96,8 +96,8 @@ class SetGUC(ContextDecorator):
         else:
             if self.guc_exists and self.old_value:
                 pass
-                # plpy.execute("set {0}='{1}'".
-                #              format(self.guc_name, self.old_value))
+                plpy.execute("set {0}='{1}'".
+                             format(self.guc_name, self.old_value))
 
 
 class OptimizerControl(ContextDecorator):
