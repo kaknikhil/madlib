@@ -757,8 +757,8 @@ CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.training_preprocessor_dl(
     num_classes                 INTEGER
 ) RETURNS VOID AS $$
     PythonFunctionBodyOnly(deep_learning, input_data_preprocessor)
-    from utilities.control import MinWarning
-    with AOControl(False):
+    from utilities.control import MinWarning, SetGUC
+    with AOControl(False) and SetGUC("gp_autostats_mode_in_functions", "ON_NO_STATS"):
         with MinWarning('error'):
             training_preprocessor_obj = input_data_preprocessor.TrainingDataPreprocessorDL(**globals())
             training_preprocessor_obj.training_preprocessor_dl()

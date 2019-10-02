@@ -66,6 +66,11 @@ def np_array_int16(var, var_shape):
     arr.shape = var_shape
     return arr
 
+def np_array_int32(var, var_shape):
+    arr = np.frombuffer(var, dtype=np.int32)
+    arr.shape = var_shape
+    return arr
+
 def strip_trailing_nulls_from_class_values(class_values):
     """
         class_values is a list of unique class levels in training data. This
@@ -129,8 +134,6 @@ def get_image_count_per_seg_for_minibatched_data_from_db(table_name):
     mb_dep_var_col = MINIBATCH_OUTPUT_DEPENDENT_COLNAME_DL
 
     shape_col = add_postfix(mb_dep_var_col, "_shape")
-    plpy.info(table_name)
-    plpy.info(shape_col)
 
     if is_platform_pg():
         res = plpy.execute(
