@@ -128,11 +128,61 @@ class FitMultipleModel():
             if CUDA_VISIBLE_DEVICES_KEY in os.environ:
                 original_cuda_env = os.environ[CUDA_VISIBLE_DEVICES_KEY]
             self.start_training_time = datetime.datetime.now()
-            self.train_multiple_model()
+            # self.train_multiple_model()
+            self.train_multiple_model_hyperband()
             self.end_training_time = datetime.datetime.now()
             self.insert_info_table()
             self.create_model_summary_table()
         reset_cuda_env(original_cuda_env)
+
+    def train_multiple_model_hyperband(self):
+        from math import ceil, log
+        max_iter = 9  	# maximum iterations per configuration
+        eta = 3			# defines configuration downsampling rate (default = 3)
+
+        logeta = lambda x: log(x) / log(eta)
+        s_max = int(logeta(max_iter))# 3
+        B = (s_max + 1) * max_iter # 27
+        for s in reversed( range( s_max + 1 )):
+            n = int( ceil( B / max_iter / ( s + 1 ) * eta ** s )) #9
+
+            # initial number of iterations per config
+            r = max_iter * eta ** (-s) #1
+
+            plpy.info("\n s:{0}, n:{1}, r:{2}"
+                      .format(s, n, r))
+
+            # n random configurations
+            plpy.execute("DROP TABLE IF EXISTS mst_table_temp")
+            q = "CREATE TABLE mst_table_temp as select * from {0} limit {1}".format(self.model_selection_table, n)
+            plpy.execute(q)
+            for i in range(s + 1):
+                n_configs = int(n * eta ** (-i))
+                n_iterations = int(r * eta ** (i))
+
+                plpy.info("\n configs: {0} iterations:{1}".format(n_configs, n_iterations))
+
+                self.num_iterations = n_iterations
+
+                self.msts, self.model_arch_table = query_model_configs(
+                    'mst_table_temp', self.model_selection_summary_table,
+                    self.mst_key_col, self.model_arch_table_col)
+
+                if len(self.msts) < len(self.dist_keys):
+                    self.msts_for_schedule = self.msts + [None] * \
+                                             (len(self.dist_keys) - len(self.msts))
+                else:
+                    self.msts_for_schedule = self.msts
+
+                self.train_multiple_model()
+                limit = int(n_configs / eta)
+                query = """
+                        delete from mst_table_temp where {0} not in
+                        (select {0} from {1}
+                        order by training_loss_final limit {2});
+                        """.format(self.mst_key_col,
+                                   self.model_info_table, limit)
+                plpy.execute(query)
 
     def train_multiple_model(self):
         total_msts = len(self.msts_for_schedule)
