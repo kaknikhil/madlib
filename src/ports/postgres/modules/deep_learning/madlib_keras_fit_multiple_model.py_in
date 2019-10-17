@@ -143,8 +143,9 @@ class FitMultipleModel():
         logeta = lambda x: log(x) / log(eta)
         s_max = int(logeta(max_iter))# 3
         B = (s_max + 1) * max_iter # 27
+        results = []
         for s in reversed( range( s_max + 1 )):
-            n = int( ceil( B / max_iter / ( s + 1 ) * eta ** s )) #9
+            n = int( ceil( B / max_iter / ( s + 1 ) * eta ** s )) # 3 for s = 1
 
             # initial number of iterations per config
             r = max_iter * eta ** (-s) #1
@@ -167,6 +168,7 @@ class FitMultipleModel():
                 self.msts, self.model_arch_table = query_model_configs(
                     'mst_table_temp', self.model_selection_summary_table,
                     self.mst_key_col, self.model_arch_table_col)
+                plpy.info('len of msts {}'.format(len(self.msts)))
 
                 if len(self.msts) < len(self.dist_keys):
                     self.msts_for_schedule = self.msts + [None] * \
@@ -175,14 +177,48 @@ class FitMultipleModel():
                     self.msts_for_schedule = self.msts
 
                 self.train_multiple_model()
-                limit = int(n_configs / eta)
-                query = """
-                        delete from mst_table_temp where {0} not in
-                        (select {0} from {1}
-                        order by training_loss_final limit {2});
-                        """.format(self.mst_key_col,
-                                   self.model_info_table, limit)
-                plpy.execute(query)
+                self.insert_info_table()
+
+                if i != s:
+                    limit = int(n_configs / eta)
+                    plpy.info('deleting from mst_table_temp with limit {}'.format(limit))
+                    # q = """select {0} from {1}
+                    #         order by training_loss_final limit {2}""".format(self.mst_key_col,
+                    #                                                          self.model_info_table, limit)
+                    # # r = plpy.execute(q)
+                    # for j in r:
+                    #     plpy.info(j[self.mst_key_col])
+
+                    query = """
+                            delete from mst_table_temp where {0} not in
+                            (select {0} from {1} where {0} in (select {0} from mst_table_temp)
+                            order by training_loss_final limit {2});
+                            """.format(self.mst_key_col,
+                                       self.model_info_table, limit)
+                    plpy.execute(query)
+                    count = plpy.execute("select count(*) as count from mst_table_temp;")[0]['count']
+                    if count != limit:
+                        plpy.error('mst table temp count {} != limit {}'.format(count, limit))
+
+            # assuming that this returns one row
+            q = """
+            select a.mst_key, training_loss_final from {0} a
+            JOIN mst_table_temp b on a.mst_key=b.mst_key 
+            order by training_loss_final
+            """.format(self.model_info_table)
+
+            r = plpy.execute(q)[0]
+            result = {}
+            result['s'] = s
+            result['mst_key'] = r['mst_key']
+            plpy.info("loss for mst_key {} is {}".format(r['mst_key'], r['training_loss_final']))
+            # break
+            result['loss'] = float(str(r['training_loss_final']))
+            results.append(result)
+
+        plpy.info('Top 5 configs')
+        for r in sorted(results, key=lambda x: x['loss'])[:5]:
+            plpy.info("loss: {} | {} mst_key ".format(r['loss'], r['mst_key']))
 
     def train_multiple_model(self):
         total_msts = len(self.msts_for_schedule)
