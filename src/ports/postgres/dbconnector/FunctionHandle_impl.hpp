@@ -125,7 +125,7 @@ FunctionHandle::invoke(AnyType &args) {
         oldContext = MemoryContextSwitchTo(callContext);
     }
 
-    FunctionCallInfoData funcPtrCallInfo;
+    FunctionCallInfoBaseData funcPtrCallInfo;
     // Initializes all the fields of a FunctionCallInfoData except for the arg[]
     // and argnull[] arrays
     madlib_InitFunctionCallInfoData(
@@ -148,9 +148,9 @@ FunctionHandle::invoke(AnyType &args) {
     );
 
     for (uint16_t i = 0; i < funcPtrCallInfo.nargs; ++i) {
-        funcPtrCallInfo.arg[i] = args[i].getAsDatum(&funcPtrCallInfo,
+        funcPtrCallInfo.args[i].value = args[i].getAsDatum(&funcPtrCallInfo,
             mFuncInfo->getArgumentType(i));
-        funcPtrCallInfo.argnull[i] = args[i].isNull();
+        funcPtrCallInfo.args[i].isnull = args[i].isNull();
     }
 
     Datum result = internalInvoke(&funcPtrCallInfo);

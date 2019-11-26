@@ -116,7 +116,7 @@ exec_sql_using(PG_FUNCTION_ARGS) {
                 format_procedure(fcinfo->flinfo->fn_oid))
             ));
 
-    int result = SPI_execute_plan(plan, &fcinfo->arg[1], nulls, false,
+    int result = SPI_execute_plan(plan, &fcinfo->args[1].value, nulls, false,
         returnVoid ? 0 : 1);
 
     Datum returnValue = 0;

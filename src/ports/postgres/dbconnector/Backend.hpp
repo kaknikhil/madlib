@@ -104,7 +104,7 @@ MADLIB_WRAP_VOID_PG_FUNC(
 
 inline
 void
-madlib_InitFunctionCallInfoData(FunctionCallInfoData& fcinfo, FmgrInfo* flinfo,
+madlib_InitFunctionCallInfoData(FunctionCallInfoBaseData& fcinfo, FmgrInfo* flinfo,
     short nargs, Oid fncollation, fmNodePtr context, fmNodePtr resultinfo) {
 
 #if PG_VERSION_NUM >= 90100
