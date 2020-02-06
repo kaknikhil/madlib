@@ -529,11 +529,21 @@ class FitMultipleModel():
             GROUP BY src.{dist_key_col}, {self.mst_weights_tbl}.{self.mst_key_col}
             DISTRIBUTED BY({dist_key_col});
 
-            UPDATE {self.model_output_table}
-            SET {self.model_weights_col} = {self.weights_to_update_tbl}.{self.model_weights_col}
-            FROM {self.weights_to_update_tbl}
-            WHERE {self.model_output_table}.{self.mst_key_col} = {self.weights_to_update_tbl}.{self.mst_key_col};
+            --UPDATE {self.model_output_table}
+            --SET {self.model_weights_col} = {self.weights_to_update_tbl}.{self.model_weights_col}
+            --FROM {self.weights_to_update_tbl}
+            --WHERE {self.model_output_table}.{self.mst_key_col} = {self.weights_to_update_tbl}.{self.mst_key_col};
 
+            CREATE TABLE foobar as  -- get distribution and constraints
+            SELECT a.{self.mst_key_col},
+            COALESCE(b.{self.model_weights_col}, a.{self.model_weights_col})
+            AS {self.model_weights_col},
+            a.{self.model_arch_col}
+            FROM {self.model_output_table} a LEFT JOIN {self.weights_to_update_tbl} b USING ({self.mst_key_col}) ;
+
+            TRUNCATE {self.model_output_table};
+            DROP TABLE {self.model_output_table};
+            ALTER TABLE foobar RENAME to {self.model_output_table};
             TRUNCATE TABLE {self.mst_weights_tbl}, {self.mst_current_schedule_tbl}, {self.weights_to_update_tbl};
             DROP TABLE IF EXISTS {self.mst_weights_tbl}, {self.mst_current_schedule_tbl}, {self.weights_to_update_tbl};
             """.format(mb_dep_var_col=mb_dep_var_col,
