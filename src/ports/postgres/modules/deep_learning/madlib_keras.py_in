@@ -23,11 +23,11 @@ import plpy
 import sys
 import time
 
-from keras import backend as K
-from keras.layers import *
-from keras.models import *
-from keras.optimizers import *
-from keras.regularizers import *
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import *
+from tensorflow.keras.models import *
+from tensorflow.keras.optimizers import *
+from tensorflow.keras.regularizers import *
 from madlib_keras_helper import *
 from madlib_keras_validator import *
 from madlib_keras_wrapper import *
