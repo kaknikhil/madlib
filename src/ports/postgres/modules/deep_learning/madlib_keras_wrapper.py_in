@@ -33,6 +33,7 @@ import madlib_keras_serializer
 import madlib_keras_gpu_info
 from utilities.utilities import _assert
 from utilities.utilities import is_platform_pg
+from numba import cuda
 
 CUDA_VISIBLE_DEVICES_KEY = 'CUDA_VISIBLE_DEVICES'
 #######################################################################
@@ -92,6 +93,10 @@ def clear_keras_session(sess = None):
     K.clear_session()
     sess.close()
 
+def close_device(device_id):
+    plpy.info('Closing device {}'.format(device_id))
+    cuda.select_device(device_id)
+    cuda.close()
 
 def get_gpu_memory_fraction(gpu_count, segments_per_host):
     """

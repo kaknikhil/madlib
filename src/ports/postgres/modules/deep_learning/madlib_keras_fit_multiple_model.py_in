@@ -245,6 +245,7 @@ class FitMultipleModel():
                 if self.validation_table:
                     self.evaluate_model(iter, self.validation_table, False)
             plpy.info("\n"+self.info_str)
+        #plpy.execute("select clear_cuda_memory(gp_segment_id) from gp_dist_random('gp_id');")
 
     def evaluate_model(self, epoch, table, is_train):
         if is_train:
@@ -557,6 +558,7 @@ class FitMultipleModel():
         # Therefore we want to have queries that do not add motions and all the
         # sub-queries running Keras/tensorflow operations reuse the same slice(process)
         # that was used for initializing GPU memory.
+        start_time = time.time()
         use_gpus = self.use_gpus if self.use_gpus else False
         mst_weights_query = """
             CREATE {self.unlogged_table} TABLE {self.mst_weights_tbl} AS
@@ -601,7 +603,7 @@ class FitMultipleModel():
             DISTRIBUTED BY({dist_key_col})
             """.format(mb_dep_var_col=mb_dep_var_col,
                        mb_indep_var_col=mb_indep_var_col,
-                       is_final_iteration=True,
+                       is_final_iteration=self.is_final_training_call,
                        dist_key_col=dist_key_col,
                        use_gpus=use_gpus,
                        self=self
@@ -617,6 +619,7 @@ class FitMultipleModel():
         plpy.execute(update_query)
 
         self.truncate_and_drop_tables()
+        plpy.info("############## end mst hop {}: {}s #######################".format(mst_idx, time.time() - start_time))
 
     def truncate_and_drop_tables(self):
         """
