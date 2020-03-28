@@ -22,6 +22,7 @@ import os
 import plpy
 import sys
 import time
+import tensorflow as tf
 
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import *
@@ -42,38 +43,33 @@ from utilities.utilities import madlib_version
 from utilities.utilities import unique_string
 from utilities.validate_args import get_expr_type
 from utilities.control import MinWarning
-import tensorflow as tf
 
 class SD_STORE:
-    SESS = 'sess'
     SEGMENT_MODEL = 'segment_model'
 
     @staticmethod
-    def init_SD(SD, sess, segment_model):
-        SD[SD_STORE.SESS] = sess
+    def init_SD(SD, segment_model):
         SD[SD_STORE.SEGMENT_MODEL] = segment_model
 
     @staticmethod
     def clear_SD(SD):
         del SD[SD_STORE.SEGMENT_MODEL]
-        del SD[SD_STORE.SESS]
 
 def get_init_model_and_sess(SD, device_name, gpu_count, segments_per_host,
                                model_architecture, compile_params):
     # If a live session is present, re-use it. Otherwise, recreate it.
-    if SD_STORE.SESS in SD :
+    if SD_STORE.SEGMENT_MODEL in SD :
         if SD_STORE.SEGMENT_MODEL not in SD:
             plpy.error("Session and model should exist in SD after the first row"
                        "of the first iteration")
-        sess = SD[SD_STORE.SESS]
         segment_model = SD[SD_STORE.SEGMENT_MODEL]
-        tf.compat.v1.keras.backend.set_session(sess)
     else:
-        sess = get_keras_session(device_name, gpu_count, segments_per_host)
-        tf.compat.v1.keras.backend.set_session(sess)
+        #gpus = tf.config.experimental.list_physical_devices('GPU')
+        #tf.config.experimental.set_memory_growth(gpus[0], True)
+        #tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=100*1024)])
         segment_model = init_model(model_architecture, compile_params)
-        SD_STORE.init_SD(SD, sess, segment_model)
-    return segment_model, sess
+        SD_STORE.init_SD(SD, segment_model)
+    return segment_model
 
 @MinWarning("warning")
 def fit(schema_madlib, source_table, model, model_arch_table,
@@ -484,7 +480,7 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     SD = kwargs['SD']
     device_name = get_device_name_and_set_cuda_env(accessible_gpus_for_seg[current_seg_id], current_seg_id)
 
-    segment_model, sess = get_init_model_and_sess(SD, device_name,
+    segment_model = get_init_model_and_sess(SD, device_name,
                                                   accessible_gpus_for_seg[current_seg_id],
                                                   segments_per_host,
                                                   model_architecture, compile_params)
@@ -513,7 +509,6 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     if is_last_row:
         if is_final_iteration or is_multiple_model:
             SD_STORE.clear_SD(SD)
-            clear_keras_session(sess)
 
     return return_state
 
@@ -735,7 +730,7 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
     #   for the last buffer of last iteration
     #  if is_final_iteration is false, we can clear the
 
-    segment_model, sess = get_init_model_and_sess(SD, device_name,
+    segment_model = get_init_model_and_sess(SD, device_name,
                                                   accessible_gpus_for_seg[current_seg_id],
                                                   segments_per_host,
                                                   model_architecture,
@@ -770,11 +765,8 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
                                                       images_per_seg)
 
     if agg_image_count == total_images and is_final_iteration:
-        K.clear_session()
-        sess.close()
         SD_STORE.clear_SD(SD)
         del segment_model
-        del sess
 
     state[0] = agg_loss
     state[1] = agg_metric

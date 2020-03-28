@@ -221,6 +221,7 @@ class FitMultipleModel():
                      self.original_model_output_table)
 
     def train_multiple_model(self):
+        plpy.execute("select assign_gpu_memory() from gp_dist_random('gp_id')")
         total_msts = len(self.msts_for_schedule)
         for iter in range(1, self.num_iterations+1):
             for mst_idx in range(total_msts):
@@ -558,6 +559,7 @@ class FitMultipleModel():
         # Therefore we want to have queries that do not add motions and all the
         # sub-queries running Keras/tensorflow operations reuse the same slice(process)
         # that was used for initializing GPU memory.
+        plpy.info("start mst hop")
         start_time = time.time()
         use_gpus = self.use_gpus if self.use_gpus else False
         mst_weights_query = """
