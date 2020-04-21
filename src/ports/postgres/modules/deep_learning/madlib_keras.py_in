@@ -57,6 +57,8 @@ class SD_STORE:
     def clear_SD(SD):
         del SD[SD_STORE.SEGMENT_MODEL]
         del SD[SD_STORE.SESS]
+        if 'agg_image_count' in SD:
+            del SD['agg_image_count']
 
 def get_init_model_and_sess(SD, device_name, gpu_count, segments_per_host,
                                model_architecture, compile_params):
@@ -462,7 +464,7 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
                    compile_params, fit_params, dist_key, dist_key_mapping,
                    current_seg_id, segments_per_host, images_per_seg, use_gpus,
                    accessible_gpus_for_seg, prev_serialized_weights, is_final_iteration=True,
-                   is_multiple_model=False, **kwargs):
+                   is_multiple_model=True, **kwargs):
     """
     This transition function is common for madlib_keras_fit() and
     madlib_keras_fit_multiple_model(). The important difference between
@@ -489,12 +491,10 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
                                                   segments_per_host,
                                                   model_architecture, compile_params)
     if 'agg_image_count' not in SD:
-        plpy.info('state is none, setting weights')
         agg_image_count = 0
         SD['agg_image_count'] = agg_image_count
         set_model_weights(segment_model, prev_serialized_weights)
     else:
-        plpy.info('state is not none')
         agg_image_count = SD['agg_image_count']
 
     # Prepare the data
