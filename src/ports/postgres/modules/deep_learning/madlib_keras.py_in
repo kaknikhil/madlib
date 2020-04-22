@@ -57,6 +57,10 @@ class SD_STORE:
     def clear_SD(SD):
         del SD[SD_STORE.SEGMENT_MODEL]
         del SD[SD_STORE.SESS]
+        if 'x_train' in SD:
+            del SD['x_train']
+        if 'y_train' in SD:
+            del SD['y_train']
 
 def get_init_model_and_sess(SD, device_name, gpu_count, segments_per_host,
                                model_architecture, compile_params):
@@ -482,38 +486,54 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     if not independent_var or not dependent_var:
         return state
     SD = kwargs['SD']
-    device_name = get_device_name_and_set_cuda_env(accessible_gpus_for_seg[current_seg_id], current_seg_id)
 
-    segment_model, sess = get_init_model_and_sess(SD, device_name,
-                                                  accessible_gpus_for_seg[current_seg_id],
-                                                  segments_per_host,
-                                                  model_architecture, compile_params)
     if not state:
         agg_image_count = 0
-        set_model_weights(segment_model, prev_serialized_weights)
     else:
         agg_image_count = float(state)
 
-    # Prepare the data
-    x_train = np_array_float32(independent_var, independent_var_shape)
-    y_train = np_array_int16(dependent_var, dependent_var_shape)
+    if 'x_train' not in SD:
+        x_train = np_array_float32(independent_var, independent_var_shape)
+        y_train = np_array_int16(dependent_var, dependent_var_shape)
+        agg_image_count += len(x_train)
+    else:
+        #total_x[agg_image_count, agg_image_count + x_train_current.shape[0]] = x_train_current
+        x_train = SD['x_train']
+        y_train = SD['y_train']
+        x_train_current = np_array_float32(independent_var, independent_var_shape)
+        y_train_current = np_array_int16(dependent_var, dependent_var_shape)
+        x_train = np.concatenate((x_train, x_train_current), axis=0)
+        y_train = np.concatenate((y_train, y_train_current), axis=0)
+        agg_image_count += len(x_train_current)
 
-    # Fit segment model on data
-    #TODO consider not doing this every time
-    fit_params = parse_and_validate_fit_params(fit_params)
-    segment_model.fit(x_train, y_train, **fit_params)
+    SD['agg_image_count'] = agg_image_count
+    SD['x_train'] = x_train
+    SD['y_train'] = y_train
 
-    # Aggregating number of images, loss and accuracy
-    agg_image_count += len(x_train)
     total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
                                                       images_per_seg)
     is_last_row = agg_image_count == total_images
+    segment_model = None
+    if is_last_row:
+        device_name = get_device_name_and_set_cuda_env(accessible_gpus_for_seg[current_seg_id], current_seg_id)
+        segment_model, sess = get_init_model_and_sess(SD, device_name,
+                                                      accessible_gpus_for_seg[current_seg_id],
+                                                      segments_per_host,
+                                                      model_architecture, compile_params)
+        set_model_weights(segment_model, prev_serialized_weights)
+        #TODO consider not doing this every time
+        # Fit segment model on data
+        fit_params = parse_and_validate_fit_params(fit_params)
+        segment_model.fit(x_train, y_train, **fit_params)
+
     return_state = get_state_to_return(segment_model, is_last_row, is_multiple_model,
                                   agg_image_count, total_images)
     if is_last_row:
         if is_final_iteration or is_multiple_model:
             SD_STORE.clear_SD(SD)
             clear_keras_session(sess)
+        del x_train
+        del y_train
 
     return return_state
 

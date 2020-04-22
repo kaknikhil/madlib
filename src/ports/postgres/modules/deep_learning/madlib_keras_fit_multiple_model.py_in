@@ -557,6 +557,7 @@ class FitMultipleModel():
         # Therefore we want to have queries that do not add motions and all the
         # sub-queries running Keras/tensorflow operations reuse the same slice(process)
         # that was used for initializing GPU memory.
+        start_time = time.time()
         use_gpus = self.use_gpus if self.use_gpus else False
         mst_weights_query = """
             CREATE {self.unlogged_table} TABLE {self.mst_weights_tbl} AS
@@ -572,7 +573,6 @@ class FitMultipleModel():
         """.format(dist_key_col=dist_key_col,
                    **locals())
         plpy.execute(mst_weights_query)
-        use_gpus = self.use_gpus if self.use_gpus else False
         uda_query = """
             CREATE {self.unlogged_table} TABLE {self.weights_to_update_tbl} AS
             SELECT {self.schema_madlib}.fit_step_multiple_model({mb_dep_var_col},
@@ -617,6 +617,7 @@ class FitMultipleModel():
         plpy.execute(update_query)
 
         self.truncate_and_drop_tables()
+        plpy.info("##### end mst hop {}: {}s".format(mst_idx+1, time.time()-start_time))
 
     def truncate_and_drop_tables(self):
         """
