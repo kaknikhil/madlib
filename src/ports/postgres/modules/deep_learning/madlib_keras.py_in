@@ -57,10 +57,10 @@ class SD_STORE:
     def clear_SD(SD):
         del SD[SD_STORE.SEGMENT_MODEL]
         del SD[SD_STORE.SESS]
-        if 'x_train' in SD:
-            del SD['x_train']
-        if 'y_train' in SD:
-            del SD['y_train']
+        # if 'x_train' in SD:
+        #     del SD['x_train']
+        # if 'y_train' in SD:
+        #     del SD['y_train']
 
 def get_init_model_and_sess(SD, device_name, gpu_count, segments_per_host,
                                model_architecture, compile_params):
@@ -483,7 +483,7 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
         b. keras session is cleared at the end of the final iteration,
         i.e, last row of last iteration.
     """
-    if not independent_var or not dependent_var:
+    if not dependent_var:
         return state
     SD = kwargs['SD']
 
@@ -492,23 +492,31 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     else:
         agg_image_count = float(state)
 
-    if 'x_train' not in SD:
-        x_train = np_array_float32(independent_var, independent_var_shape)
-        y_train = np_array_int16(dependent_var, dependent_var_shape)
-        agg_image_count += len(x_train)
-    else:
-        #total_x[agg_image_count, agg_image_count + x_train_current.shape[0]] = x_train_current
+    if not independent_var:
+        # plpy.info("data is cached")
         x_train = SD['x_train']
         y_train = SD['y_train']
-        x_train_current = np_array_float32(independent_var, independent_var_shape)
         y_train_current = np_array_int16(dependent_var, dependent_var_shape)
-        x_train = np.concatenate((x_train, x_train_current), axis=0)
-        y_train = np.concatenate((y_train, y_train_current), axis=0)
-        agg_image_count += len(x_train_current)
+        agg_image_count += len(y_train_current)
+    else:
+        if current_seg_id == 0:
+            plpy.info("caching data")
+        if 'x_train' not in SD:
+            x_train = np_array_float32(independent_var, independent_var_shape)
+            y_train = np_array_int16(dependent_var, dependent_var_shape)
+            agg_image_count += len(x_train)
+        else:
+            #total_x[agg_image_count, agg_image_count + x_train_current.shape[0]] = x_train_current
+            x_train = SD['x_train']
+            y_train = SD['y_train']
+            x_train_current = np_array_float32(independent_var, independent_var_shape)
+            y_train_current = np_array_int16(dependent_var, dependent_var_shape)
+            x_train = np.concatenate((x_train, x_train_current), axis=0)
+            y_train = np.concatenate((y_train, y_train_current), axis=0)
+            agg_image_count += len(y_train_current)
 
-    SD['agg_image_count'] = agg_image_count
-    SD['x_train'] = x_train
-    SD['y_train'] = y_train
+        SD['x_train'] = x_train
+        SD['y_train'] = y_train
 
     total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
                                                       images_per_seg)

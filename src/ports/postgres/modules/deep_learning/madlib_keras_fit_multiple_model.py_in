@@ -229,7 +229,7 @@ class FitMultipleModel():
                 self.is_final_training_call = (iter == self.num_iterations and mst_idx == total_msts-1)
                 if mst_idx == 0:
                     start_iteration = time.time()
-                self.run_training(mst_idx)
+                self.run_training(mst_idx, iter)
                 if mst_idx == (total_msts - 1):
                     end_iteration = time.time()
                     self.info_str = "\tTime for training in iteration " \
@@ -545,7 +545,7 @@ class FitMultipleModel():
             if self.validation_table:
                 self.update_info_table(mst, False)
 
-    def run_training(self, mst_idx):
+    def run_training(self, mst_idx, iter):
         # NOTE: In the DL module, we want to avoid CREATING TEMP tables
         # (creates a slice which stays until the session is disconnected)
         # or minimize writing queries that generate plans with Motions (creating
@@ -600,7 +600,7 @@ class FitMultipleModel():
             GROUP BY src.{dist_key_col}, {self.mst_weights_tbl}.{self.mst_key_col}
             DISTRIBUTED BY({dist_key_col})
             """.format(mb_dep_var_col=mb_dep_var_col,
-                       mb_indep_var_col=mb_indep_var_col,
+                       mb_indep_var_col=mb_indep_var_col if mst_idx == 0 and iter == 1 else 'NULL',
                        is_final_iteration=True,
                        dist_key_col=dist_key_col,
                        use_gpus=use_gpus,
