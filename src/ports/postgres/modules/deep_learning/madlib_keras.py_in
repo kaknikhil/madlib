@@ -492,25 +492,26 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     else:
         agg_image_count = float(state)
 
-    total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
-                                                      images_per_seg)
-
-    x_train_current = np_array_float32(independent_var, independent_var_shape)
-    y_train_current = np_array_int16(dependent_var, dependent_var_shape)
     if 'x_train' not in SD:
-        x_train = np.zeros(independent_var_shape)
-        y_train = np.zeros(dependent_var_shape)
+        x_train = np_array_float32(independent_var, independent_var_shape)
+        y_train = np_array_int16(dependent_var, dependent_var_shape)
+        agg_image_count += len(x_train)
     else:
+        #total_x[agg_image_count, agg_image_count + x_train_current.shape[0]] = x_train_current
         x_train = SD['x_train']
         y_train = SD['y_train']
+        x_train_current = np_array_float32(independent_var, independent_var_shape)
+        y_train_current = np_array_int16(dependent_var, dependent_var_shape)
+        x_train = np.concatenate((x_train, x_train_current), axis=0)
+        y_train = np.concatenate((y_train, y_train_current), axis=0)
+        agg_image_count += len(x_train_current)
 
-    ind = agg_image_count + int(x_train_current.shape[0])
-    x_train[agg_image_count:ind] = x_train_current
-    y_train[agg_image_count:ind] = y_train_current
-    agg_image_count += len(x_train_current)
+    SD['agg_image_count'] = agg_image_count
     SD['x_train'] = x_train
     SD['y_train'] = y_train
 
+    total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
+                                                      images_per_seg)
     is_last_row = agg_image_count == total_images
     segment_model = None
     if is_last_row:
@@ -526,7 +527,7 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
         segment_model.fit(x_train, y_train, **fit_params)
 
     return_state = get_state_to_return(segment_model, is_last_row, is_multiple_model,
-                                       agg_image_count, total_images)
+                                  agg_image_count, total_images)
     if is_last_row:
         if is_final_iteration or is_multiple_model:
             SD_STORE.clear_SD(SD)
