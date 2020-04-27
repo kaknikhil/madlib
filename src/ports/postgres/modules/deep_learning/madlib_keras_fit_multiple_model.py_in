@@ -21,7 +21,6 @@ import plpy
 import time
 import sys
 
-from keras.models import *
 from madlib_keras import compute_loss_and_metrics
 from madlib_keras import get_initial_weights
 from madlib_keras import get_model_arch_weights
@@ -44,6 +43,7 @@ from utilities.utilities import is_platform_pg
 from utilities.utilities import get_seg_number
 from utilities.utilities import get_segments_per_host
 from utilities.utilities import rename_table
+from tensorflow.keras.models import *
 
 import json
 from collections import defaultdict
