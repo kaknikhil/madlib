@@ -16,12 +16,18 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 import datetime
 import os
 import plpy
 import sys
 import time
 
+from keras import backend as K
+from keras.layers import *
+from keras.models import *
+from keras.optimizers import *
+from keras.regularizers import *
 from madlib_keras_helper import *
 from madlib_keras_validator import *
 from madlib_keras_wrapper import *
@@ -37,11 +43,6 @@ from utilities.utilities import unique_string
 from utilities.validate_args import get_expr_type
 from utilities.control import MinWarning
 import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.layers import *
-from tensorflow.keras.models import *
-from tensorflow.keras.optimizers import *
-from tensorflow.keras.regularizers import *
 
 class SD_STORE:
     SESS = 'sess'
@@ -801,7 +802,7 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
     x_val = np_array_float32(independent_var, independent_var_shape)
     y_val = np_array_int16(dependent_var, dependent_var_shape)
 
-    with tf.device(device_name):
+    with K.tf.device(device_name):
         res = segment_model.evaluate(x_val, y_val)
 
     # if metric is None, model.evaluate will only return loss as a scalar
