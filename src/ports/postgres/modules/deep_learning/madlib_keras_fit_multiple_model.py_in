@@ -221,7 +221,7 @@ class FitMultipleModel():
 
     def train_multiple_model(self):
         total_msts = len(self.msts_for_schedule)
-        for iter in range(1, self.num_iterations+1):
+        for iter in range(1, self.num_iterations+1): #TODO change iter to iteration
             for mst_idx in range(total_msts):
                 mst_row = [self.grand_schedule[dist_key][mst_idx]
                            for dist_key in self.dist_keys]
@@ -545,7 +545,7 @@ class FitMultipleModel():
             if self.validation_table:
                 self.update_info_table(mst, False)
 
-    def run_training(self, mst_idx, iter):
+    def run_training(self, mst_idx, iter_no):
         # NOTE: In the DL module, we want to avoid CREATING TEMP tables
         # (creates a slice which stays until the session is disconnected)
         # or minimize writing queries that generate plans with Motions (creating
@@ -560,69 +560,111 @@ class FitMultipleModel():
         start_time = time.time()
         use_gpus = self.use_gpus if self.use_gpus else False
         mst_weights_query = """
-            CREATE {self.unlogged_table} TABLE {self.mst_weights_tbl} AS
-                SELECT mst_tbl.*, wgh_tbl.{self.model_weights_col},
-                       model_arch_tbl.{self.model_arch_col}
-                FROM
-                    {self.mst_current_schedule_tbl} mst_tbl
-                    LEFT JOIN {self.model_output_table} wgh_tbl
-                    ON mst_tbl.{self.mst_key_col} = wgh_tbl.{self.mst_key_col}
-                        LEFT JOIN {self.model_arch_table} model_arch_tbl
-                        ON mst_tbl.{self.model_id_col} = model_arch_tbl.{self.model_id_col}
-                DISTRIBUTED BY ({dist_key_col})
-        """.format(dist_key_col=dist_key_col,
-                   **locals())
+                CREATE {self.unlogged_table} TABLE {self.mst_weights_tbl} AS
+                    SELECT mst_tbl.*, wgh_tbl.{self.model_weights_col},
+                           model_arch_tbl.{self.model_arch_col}
+                    FROM
+                        {self.mst_current_schedule_tbl} mst_tbl
+                        LEFT JOIN {self.model_output_table} wgh_tbl
+                        ON mst_tbl.{self.mst_key_col} = wgh_tbl.{self.mst_key_col}
+                            LEFT JOIN {self.model_arch_table} model_arch_tbl
+                            ON mst_tbl.{self.model_id_col} = model_arch_tbl.{self.model_id_col}
+                    DISTRIBUTED BY ({dist_key_col})
+            """.format(dist_key_col=dist_key_col, **locals())
+
         plpy.execute(mst_weights_query)
-        plpy.info("hop time : {}".format(time.time() - start_time))
+        # plpy.info("hop time : {}".format(time.time() - start_time))
         uda_time = time.time()
-        uda_query = """
-            CREATE {self.unlogged_table} TABLE {self.weights_to_update_tbl} AS
-            SELECT {self.schema_madlib}.fit_step_multiple_model({mb_dep_var_col},
-                {mb_indep_var_col},
-                {self.dep_shape_col},
-                {self.ind_shape_col},
-                {self.mst_weights_tbl}.{self.model_arch_col}::TEXT,
-                {self.mst_weights_tbl}.{self.compile_params_col}::TEXT,
-                {self.mst_weights_tbl}.{self.fit_params_col}::TEXT,
-                src.{dist_key_col},
-                ARRAY{self.dist_key_mapping},
-                src.{self.gp_segment_id_col},
-                {self.segments_per_host},
-                ARRAY{self.images_per_seg_train},
-                {use_gpus}::BOOLEAN,
-                ARRAY{self.accessible_gpus_for_seg},
-                {self.mst_weights_tbl}.{self.model_weights_col}::BYTEA,
-                {is_final_iteration}::BOOLEAN
-                )::BYTEA AS {self.model_weights_col},
-                {self.mst_weights_tbl}.{self.mst_key_col} AS {self.mst_key_col}
-                ,src.{dist_key_col} AS {dist_key_col}
-            FROM {self.source_table} src JOIN {self.mst_weights_tbl}
-                USING ({dist_key_col})
-            WHERE {self.mst_weights_tbl}.{self.mst_key_col} IS NOT NULL
-            GROUP BY src.{dist_key_col}, {self.mst_weights_tbl}.{self.mst_key_col}
-            DISTRIBUTED BY({dist_key_col})
-            """.format(mb_dep_var_col=mb_dep_var_col,
-                       mb_indep_var_col=mb_indep_var_col if mst_idx == 0 and iter == 1 else 'NULL',
-                       is_final_iteration=True,
-                       dist_key_col=dist_key_col,
-                       use_gpus=use_gpus,
-                       self=self
-                       )
+        if mst_idx == 0 and iter_no == 1:
+            uda_query = """
+                    CREATE {self.unlogged_table} TABLE {self.weights_to_update_tbl} AS
+                    SELECT {self.schema_madlib}.fit_step_multiple_model({mb_dep_var_col},
+                        {mb_indep_var_col},
+                        {self.dep_shape_col},
+                        {self.ind_shape_col},
+                        {self.mst_weights_tbl}.{self.model_arch_col}::TEXT,
+                        {self.mst_weights_tbl}.{self.compile_params_col}::TEXT,
+                        {self.mst_weights_tbl}.{self.fit_params_col}::TEXT,
+                        src.{dist_key_col},
+                        ARRAY{self.dist_key_mapping},
+                        src.{self.gp_segment_id_col},
+                        {self.segments_per_host},
+                        ARRAY{self.images_per_seg_train},
+                        {use_gpus}::BOOLEAN,
+                        ARRAY{self.accessible_gpus_for_seg},
+                        {self.mst_weights_tbl}.{self.model_weights_col}::BYTEA,
+                        {is_final_iteration}::BOOLEAN
+                        )::BYTEA AS {self.model_weights_col},
+                        {self.mst_weights_tbl}.{self.mst_key_col} AS {self.mst_key_col}
+                        ,src.{dist_key_col} AS {dist_key_col}
+                    FROM {self.source_table} src JOIN {self.mst_weights_tbl}
+                        USING ({dist_key_col})
+                    WHERE {self.mst_weights_tbl}.{self.mst_key_col} IS NOT NULL
+                    GROUP BY src.{dist_key_col}, {self.mst_weights_tbl}.{self.mst_key_col}
+                    DISTRIBUTED BY({dist_key_col})
+                    """.format(mb_dep_var_col=mb_dep_var_col,
+                               mb_indep_var_col=mb_indep_var_col,
+                               is_final_iteration=True,
+                               dist_key_col=dist_key_col,
+                               use_gpus=use_gpus,
+                               self=self)
+        else:
+            plpy.execute("""
+                drop table if exists src_1row_per_seg;
+                create table src_1row_per_seg as select {dist_key_col} from {self.source_table} group by {dist_key_col} ;
+                """.format(self=self, dist_key_col=dist_key_col))
+            uda_query = """
+                    CREATE {self.unlogged_table} TABLE {self.weights_to_update_tbl} AS
+                    SELECT {self.schema_madlib}.fit_step_multiple_model({mb_dep_var_col},
+                        {mb_indep_var_col},
+                        ARRAY[0],
+                        ARRAY[0],
+                        {self.mst_weights_tbl}.{self.model_arch_col}::TEXT,
+                        {self.mst_weights_tbl}.{self.compile_params_col}::TEXT,
+                        {self.mst_weights_tbl}.{self.fit_params_col}::TEXT,
+                        src.{dist_key_col},
+                        ARRAY{self.dist_key_mapping},
+                        src.{self.gp_segment_id_col},
+                        {self.segments_per_host},
+                        ARRAY{self.images_per_seg_train},
+                        {use_gpus}::BOOLEAN,
+                        ARRAY{self.accessible_gpus_for_seg},
+                        {self.mst_weights_tbl}.{self.model_weights_col}::BYTEA,
+                        {is_final_iteration}::BOOLEAN
+                        )::BYTEA AS {self.model_weights_col},
+                        {self.mst_weights_tbl}.{self.mst_key_col} AS {self.mst_key_col}
+                        ,src.{dist_key_col} AS {dist_key_col}
+                    FROM src_1row_per_seg src JOIN {self.mst_weights_tbl}
+                        USING ({dist_key_col})
+                    WHERE {self.mst_weights_tbl}.{self.mst_key_col} IS NOT NULL
+                    GROUP BY src.{dist_key_col}, {self.mst_weights_tbl}.{self.mst_key_col}
+                    DISTRIBUTED BY({dist_key_col} )
+                    """.format(mb_dep_var_col='NULL',
+                               mb_indep_var_col='NULL',
+                               is_final_iteration=True,
+                               dist_key_col=dist_key_col,
+                               use_gpus=use_gpus,
+                               self=self
+                               )
         plpy.execute(uda_query)
         plpy.info("uda time : {}".format(time.time() - uda_time))
         update_time = time.time()
+
         update_query = """
-            UPDATE {self.model_output_table}
-            SET {self.model_weights_col} = {self.weights_to_update_tbl}.{self.model_weights_col}
-            FROM {self.weights_to_update_tbl}
-            WHERE {self.model_output_table}.{self.mst_key_col} = {self.weights_to_update_tbl}.{self.mst_key_col}
-        """.format(self=self)
+                UPDATE {self.model_output_table}
+                SET {self.model_weights_col} = {self.weights_to_update_tbl}.{self.model_weights_col}
+                FROM {self.weights_to_update_tbl}
+                WHERE {self.model_output_table}.{self.mst_key_col} = {self.weights_to_update_tbl}.{self.mst_key_col}
+            """.format(self=self)
         plpy.execute(update_query)
-        plpy.info("update time : {}".format(time.time() - update_time))
+        # plpy.info("update time : {}".format(time.time() - update_time))
         truncate_time = time.time()
+
         self.truncate_and_drop_tables()
-        plpy.info("truncate time : {}".format(time.time() - truncate_time))
+        # plpy.info("truncate time : {}".format(time.time() - truncate_time))
+        plpy.execute("drop table if exists src_1row_per_seg;")
         plpy.info("##### end mst hop {}: {}s".format(mst_idx+1, time.time()-start_time))
+
 
     def truncate_and_drop_tables(self):
         """
