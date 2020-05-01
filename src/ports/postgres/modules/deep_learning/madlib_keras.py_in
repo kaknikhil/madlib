@@ -496,42 +496,51 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     cache_time = time.time()
     if not independent_var:
         print_on_seg("using cached data", current_seg_id)
-        x_train = SD['x_train']
-        y_train = SD['y_train']
+        # x_train = SD['x_train']
+        # y_train = SD['y_train']
         total_images = None
         is_last_row = True
     else:
         print_on_seg("caching data", current_seg_id)
+        print_on_seg(independent_var_shape, current_seg_id)
         if 'x_train' not in SD:
-            x_train = np_array_float32(independent_var, independent_var_shape)
-            y_train = np_array_int16(dependent_var, dependent_var_shape)
-            agg_image_count += len(x_train)
+            x_train = independent_var
+            y_train = dependent_var
+
+            # x_train = np_array_float32(independent_var, independent_var_shape)
+            # y_train = np_array_int16(dependent_var, dependent_var_shape)
+            agg_image_count += independent_var_shape[0]
         else:
-            #total_x[agg_image_count, agg_image_count + x_train_current.shape[0]] = x_train_current
-            x_train = SD['x_train']
-            y_train = SD['y_train']
-            x_train_current = np_array_float32(independent_var, independent_var_shape)
-            y_train_current = np_array_int16(dependent_var, dependent_var_shape)
-            x_train = np.concatenate((x_train, x_train_current), axis=0)
-            y_train = np.concatenate((y_train, y_train_current), axis=0)
-            agg_image_count += len(y_train_current)
+            # x_train = SD['x_train']
+            # y_train = SD['y_train']
+            # x_train_current = np_array_float32(independent_var, independent_var_shape)
+            # y_train_current = np_array_int16(dependent_var, dependent_var_shape)
+            # x_train = np.concatenate((x_train, x_train_current), axis=0)
+            # y_train = np.concatenate((y_train, y_train_current), axis=0)
+
+            x_train = SD['x_train'] + independent_var
+            y_train = SD['y_train'] + dependent_var
+            agg_image_count += independent_var_shape[0]
 
         total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
                                                           images_per_seg)
         is_last_row = agg_image_count == total_images
         SD['x_train'] = x_train
         SD['y_train'] = y_train
+        SD['agg_image_count'] = agg_image_count
+        SD['independent_var_shape'] = independent_var_shape[1:]
+        SD['dependent_var_shape'] = dependent_var_shape[1:]
 
-    # print_on_seg("cache time {}".format(time.time() - cache_time), current_seg_id)
+    print_on_seg("cache time {}".format(time.time() - cache_time), current_seg_id)
 
     get_total_image_time = time.time()
-    # print_on_seg("get total image time {}".format(time.time() - get_total_image_time), current_seg_id)
+    print_on_seg("get total image time {}".format(time.time() - get_total_image_time), current_seg_id)
 
     segment_model = None
     if is_last_row:
         set_device_time = time.time()
         device_name = get_device_name_and_set_cuda_env(accessible_gpus_for_seg[current_seg_id], current_seg_id)
-        # print_on_seg("set device time {}".format(time.time() - set_device_time), current_seg_id)
+        print_on_seg("set device time {}".format(time.time() - set_device_time), current_seg_id)
 
         init_model_time = time.time()
         segment_model, sess = get_init_model_and_sess(SD, device_name,
@@ -541,28 +550,30 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
         print_on_seg("get init model and sess time {}".format(time.time() - init_model_time), current_seg_id)
         set_model_weights_time = time.time()
         set_model_weights(segment_model, prev_serialized_weights)
-        # print_on_seg("set model weights time {}".format(time.time() - set_model_weights_time), current_seg_id)
+        print_on_seg("set model weights time {}".format(time.time() - set_model_weights_time), current_seg_id)
         #TODO consider not doing this every time
         # Fit segment model on data
         fit_time = time.time()
         fit_params = parse_and_validate_fit_params(fit_params)
-        segment_model.fit(x_train, y_train, **fit_params)
-        # print_on_seg("keras fit time {}".format(time.time() - fit_time), current_seg_id)
+        x_train_all = np_array_float32(SD['x_train'], [int(SD['agg_image_count']), 32,32,3])
+        y_train_all = np_array_int16(SD['y_train'],  [int(SD['agg_image_count']), 10])
+        segment_model.fit(x_train_all, y_train_all, **fit_params)
+        print_on_seg("keras fit time {}".format(time.time() - fit_time), current_seg_id)
 
 
     get_state_time = time.time()
     return_state = get_state_to_return(segment_model, is_last_row, is_multiple_model,
                                        agg_image_count, total_images)
-    # print_on_seg("get state time {}".format(time.time() - get_state_time), current_seg_id)
+    print_on_seg("get state time {}".format(time.time() - get_state_time), current_seg_id)
     clear_time = time.time()
     if is_last_row:
         if is_final_iteration or is_multiple_model:
             SD_STORE.clear_SD(SD)
             clear_keras_session(sess)
-        del x_train
-        del y_train
+        # del x_train
+        # del y_train
 
-    # print_on_seg("clear time {}".format(time.time() - clear_time), current_seg_id)
+    print_on_seg("clear time {}".format(time.time() - clear_time), current_seg_id)
     print_on_seg("total time for buffer {}".format(time.time() - start_time), current_seg_id)
     return return_state
 
