@@ -245,6 +245,7 @@ class FitMultipleModel():
                 if self.validation_table:
                     self.evaluate_model(iter, self.validation_table, False)
             plpy.info("\n"+self.info_str)
+        plpy.execute("drop table if exists src_1row_per_seg;")
 
     def evaluate_model(self, epoch, table, is_train):
         if is_train:
@@ -662,7 +663,6 @@ class FitMultipleModel():
 
         self.truncate_and_drop_tables()
         plpy.info("truncate time : {}".format(time.time() - truncate_time))
-        plpy.execute("drop table if exists src_1row_per_seg;")
         plpy.info("##### end mst hop {}: {}s".format(mst_idx+1, time.time()-start_time))
 
 

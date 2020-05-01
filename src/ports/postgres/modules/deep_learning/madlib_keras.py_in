@@ -510,6 +510,8 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
             # x_train = np_array_float32(independent_var, independent_var_shape)
             # y_train = np_array_int16(dependent_var, dependent_var_shape)
             agg_image_count += independent_var_shape[0]
+            SD['x_train'] = list()
+            SD['y_train'] = list()
         else:
             # x_train = SD['x_train']
             # y_train = SD['y_train']
@@ -518,18 +520,25 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
             # x_train = np.concatenate((x_train, x_train_current), axis=0)
             # y_train = np.concatenate((y_train, y_train_current), axis=0)
 
-            x_train = SD['x_train'] + independent_var
-            y_train = SD['y_train'] + dependent_var
+            # x_train = SD['x_train'] + independent_var
+            # y_train = SD['y_train'] + dependent_var
             agg_image_count += independent_var_shape[0]
 
         total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
                                                           images_per_seg)
         is_last_row = agg_image_count == total_images
-        SD['x_train'] = x_train
-        SD['y_train'] = y_train
+
+        SD['x_train'].append(independent_var)
+        SD['y_train'].append(dependent_var)
+
+        # SD['x_train'] = x_train
+        # SD['y_train'] = y_train
         SD['agg_image_count'] = agg_image_count
         SD['independent_var_shape'] = independent_var_shape[1:]
         SD['dependent_var_shape'] = dependent_var_shape[1:]
+        if is_last_row:
+            SD['x_train'] = ''.join(SD['x_train'])
+            SD['y_train'] = ''.join(SD['y_train'])
 
     print_on_seg("cache time {}".format(time.time() - cache_time), current_seg_id)
 
@@ -555,7 +564,8 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
         # Fit segment model on data
         fit_time = time.time()
         fit_params = parse_and_validate_fit_params(fit_params)
-        x_train_all = np_array_float32(SD['x_train'], [int(SD['agg_image_count']), 32,32,3])
+
+        x_train_all = np_array_float32(SD['x_train'], [int(SD['agg_image_count']), 784])
         y_train_all = np_array_int16(SD['y_train'],  [int(SD['agg_image_count']), 10])
         segment_model.fit(x_train_all, y_train_all, **fit_params)
         print_on_seg("keras fit time {}".format(time.time() - fit_time), current_seg_id)
