@@ -537,6 +537,7 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
         SD['independent_var_shape'] = independent_var_shape[1:]
         SD['dependent_var_shape'] = dependent_var_shape[1:]
         if is_last_row:
+            print_on_seg("joining x and y for the last buffer")
             SD['x_train'] = ''.join(SD['x_train'])
             SD['y_train'] = ''.join(SD['y_train'])
 
