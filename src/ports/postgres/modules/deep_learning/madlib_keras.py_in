@@ -530,18 +530,19 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
                                                           images_per_seg)
         is_last_row = agg_image_count == total_images
 
-        SD['x_train'].append(independent_var)
-        SD['y_train'].append(dependent_var)
+        x_train_current = np_array_float32(independent_var, independent_var_shape)
+        y_train_current = np_array_int16(dependent_var, dependent_var_shape)
+        SD['x_train'].append(x_train_current)
+        SD['y_train'].append(y_train_current)
 
         # SD['x_train'] = x_train
         # SD['y_train'] = y_train
         SD['agg_image_count'] = agg_image_count
         SD['independent_var_shape'] = independent_var_shape[1:]
         SD['dependent_var_shape'] = dependent_var_shape[1:]
-        if is_last_row:
-            print_on_seg("joining x and y for the last buffer", current_seg_id)
-            SD['x_train'] = ''.join(SD['x_train'])
-            SD['y_train'] = ''.join(SD['y_train'])
+        # if is_last_row:
+        #     SD['x_train'] = ''.join(SD['x_train'])
+        #     SD['y_train'] = ''.join(SD['y_train'])
 
     print_on_seg("cache time {}".format(time.time() - cache_time), current_seg_id)
 
@@ -563,15 +564,16 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
         set_model_weights_time = time.time()
         set_model_weights(segment_model, prev_serialized_weights)
         print_on_seg("set model weights time {}".format(time.time() - set_model_weights_time), current_seg_id)
-        #TODO consider not doing this every time
-        # Fit segment model on data
-        fit_time = time.time()
-        fit_params = parse_and_validate_fit_params(fit_params)
 
-        x_train_all = np_array_float32(SD['x_train'], [int(SD['agg_image_count']), 256,256,3])
-        y_train_all = np_array_int16(SD['y_train'],  [int(SD['agg_image_count']), 100])
-        segment_model.fit(x_train_all, y_train_all, **fit_params)
-        print_on_seg("keras fit time {}".format(time.time() - fit_time), current_seg_id)
+        total_fit_time = time.time()
+        for i in range(len(SD['x_train'])):
+            # Fit segment model on data
+            #TODO consider not doing this every time
+            fit_time = time.time()
+            fit_params = parse_and_validate_fit_params(fit_params)
+            segment_model.fit(SD['x_train'][i], SD['y_train'][i], **fit_params)
+            print_on_seg("keras fit time {}".format(time.time() - fit_time), current_seg_id)
+        print_on_seg("total keras fit time {}".format(time.time() - total_fit_time), current_seg_id)
 
 
     get_state_time = time.time()
