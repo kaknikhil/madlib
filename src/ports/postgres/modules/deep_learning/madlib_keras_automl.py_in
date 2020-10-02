@@ -23,8 +23,9 @@ import math
 from time import time
 
 from madlib_keras_validator import MstLoaderInputValidator
-from utilities.utilities import unique_string, add_postfix, extract_keyvalue_params, \
-    _assert, _assert_equal, rename_table
+from utilities.utilities import unique_string, add_postfix
+from utilities.utilities import extract_keyvalue_params
+from utilities.utilities import _assert, _assert_equal, rename_table
 from utilities.control import MinWarning, SetGUC
 from madlib_keras_fit_multiple_model import FitMultipleModel
 from madlib_keras_model_selection import MstSearch, ModelSelectionSchema
@@ -535,7 +536,7 @@ class KerasAutoML():
                     $MAD${self.random_state}$MAD$::TEXT AS random_state,
                     $MAD${self.object_table}$MAD$::TEXT AS object_table,
                     {self.use_gpus} AS use_gpus,
-                    (SELECT metrics_compute_frequency FROM {model_training.model_summary_table})::INTEGER 
+                    (SELECT metrics_compute_frequency FROM {model_training.model_summary_table})::INTEGER
                     AS metrics_compute_frequency,
                     $MAD${self.name}$MAD$::TEXT AS name,
                     $MAD${self.description}$MAD$::TEXT AS description,
@@ -544,9 +545,9 @@ class KerasAutoML():
                     (SELECT madlib_version FROM {model_training.model_summary_table}) AS madlib_version,
                     (SELECT num_classes FROM {model_training.model_summary_table})::INTEGER AS num_classes,
                     (SELECT class_values FROM {model_training.model_summary_table}) AS class_values,
-                    (SELECT dependent_vartype FROM {model_training.model_summary_table}) 
+                    (SELECT dependent_vartype FROM {model_training.model_summary_table})
                     AS dependent_vartype,
-                    (SELECT normalizing_const FROM {model_training.model_summary_table}) 
+                    (SELECT normalizing_const FROM {model_training.model_summary_table})
                     AS normalizing_const
             """.format(self=self, model_training=model_training))
 

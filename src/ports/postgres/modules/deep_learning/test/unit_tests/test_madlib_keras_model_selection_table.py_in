@@ -26,7 +26,7 @@ from os import path
 sys.path.append(path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))))
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
-import keras
+from tensorflow import keras
 import unittest
 from mock import *
 import plpy_mock as plpy
@@ -55,8 +55,8 @@ class GenerateModelSelectionConfigsTestCase(unittest.TestCase):
         self.model_arch_table = 'model_arch_library'
         self.model_id_list = [1, 2]
         self.compile_params_grid = """
-            {'loss': ['categorical_crossentropy'], 
-            'optimizer_params_list': [ {'optimizer': ['Adam', 'SGD'], 'lr': [0.0001, 0.1]} ], 
+            {'loss': ['categorical_crossentropy'],
+            'optimizer_params_list': [ {'optimizer': ['Adam', 'SGD'], 'lr': [0.0001, 0.1]} ],
             'metrics': ['accuracy']}
         """
         self.fit_params_grid = """
@@ -102,7 +102,7 @@ class GenerateModelSelectionConfigsTestCase(unittest.TestCase):
         self.assertEqual(9, len(generate_mst.msts))
 
         self.compile_params_grid = """
-            {'loss': ['categorical_crossentropy'],   
+            {'loss': ['categorical_crossentropy'],
             'optimizer_params_list': [ {'optimizer': ['Adam', 'SGD'], 'lr': [0.0001, 0.1]} ],
             'metrics': ['accuracy']}
         """
