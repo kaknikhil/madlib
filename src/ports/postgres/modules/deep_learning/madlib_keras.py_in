@@ -41,7 +41,6 @@ from utilities.validate_args import get_expr_type
 from utilities.control import MinWarning
 
 import tensorflow as tf
-from tensorflow import keras
 
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import *
