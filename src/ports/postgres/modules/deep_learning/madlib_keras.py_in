@@ -67,6 +67,7 @@ def get_init_model_and_sess(SD, device_name, gpu_count, segments_per_host,
                                model_architecture, compile_params, custom_function_map):
     # If a live session is present, re-use it. Otherwise, recreate it.
     if SD_STORE.SESS in SD :
+        # plpy.info('reusing session')
         if SD_STORE.SEGMENT_MODEL not in SD:
             plpy.error("Session and model should exist in SD after the first row"
                        "of the first iteration")
@@ -74,6 +75,7 @@ def get_init_model_and_sess(SD, device_name, gpu_count, segments_per_host,
         segment_model = SD[SD_STORE.SEGMENT_MODEL]
         K.set_session(sess)
     else:
+        # plpy.info('creating session')
         sess = get_keras_session(device_name, gpu_count, segments_per_host)
         K.set_session(sess)
         segment_model = init_model(model_architecture, compile_params, custom_function_map)
@@ -515,21 +517,30 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     x_train = np_array_float32(independent_var, independent_var_shape)
     y_train = np_array_int16(dependent_var, dependent_var_shape)
 
+    agg_image_count += len(x_train)
+    total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
+                                                      images_per_seg)
+    is_last_row = agg_image_count == total_images
+
+    if is_last_row:
+        plpy.info("fit transition sess graph {}".format(sess.graph))
+        plpy.info("fit transition tf graph {}".format(tf.get_default_graph()))
+        plpy.info("fit transition tf graph operations {}".format(len(tf.get_default_graph().get_operations())))
+
     # Fit segment model on data
     #TODO consider not doing this every time
     fit_params = parse_and_validate_fit_params(fit_params)
     segment_model.fit(x_train, y_train, **fit_params)
 
     # Aggregating number of images, loss and accuracy
-    agg_image_count += len(x_train)
-    total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
-                                                      images_per_seg)
-    is_last_row = agg_image_count == total_images
     return_state = get_state_to_return(segment_model, is_last_row, is_multiple_model,
                                        agg_image_count, total_images)
+
+
     if is_last_row:
         if is_final_iteration or is_multiple_model:
             SD_STORE.clear_SD(SD)
+            clear_keras_session(sess)
 
     return return_state
 
@@ -866,15 +877,32 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
                                                   segments_per_host,
                                                   model_architecture,
                                                   compile_params, custom_function_map)
+    plpy.info("eval transition sess graph {}".format(sess.graph))
+    plpy.info("eval transition tf graph {}".format(tf.get_default_graph()))
+    plpy.info("eval transition sess graph operations {}".format(len(sess.graph.get_operations())))
+    plpy.info("eval transition tf graph operations {}".format(len(tf.get_default_graph().get_operations())))
     if not agg_image_count:
         # These should already be 0, but just in case make sure
         agg_metric = 0
         agg_loss = 0
         set_model_weights(segment_model, serialized_weights)
-
+    plpy.info("eval transition sess graph {}".format(sess.graph))
+    plpy.info("eval transition tf graph {}".format(tf.get_default_graph()))
+    plpy.info("eval transition sess graph operations {}".format(len(sess.graph.get_operations())))
+    plpy.info("eval transition tf graph operations {}".format(len(tf.get_default_graph().get_operations())))
 
     x_val = np_array_float32(independent_var, independent_var_shape)
     y_val = np_array_int16(dependent_var, dependent_var_shape)
+
+    total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
+                                                      images_per_seg)
+
+    image_count = len(y_val)
+
+    agg_image_count += image_count
+    # if agg_image_count == total_images:
+    #     plpy.info("eval transition sess graph {}".format(sess.graph))
+    #     plpy.info("eval transition tf graph {}".format(tf.get_default_graph()))
 
     with tf.device(device_name):
         res = segment_model.evaluate(x_val, y_val)
@@ -887,14 +915,8 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
         loss = res
         metric = 0
 
-    image_count = len(y_val)
-
-    agg_image_count += image_count
     agg_loss += (image_count * loss)
     agg_metric += (image_count * metric)
-
-    total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
-                                                      images_per_seg)
 
     if agg_image_count == total_images and is_final_iteration:
         K.clear_session()
