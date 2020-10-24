@@ -65,25 +65,20 @@ class GD_STORE:
 
 def get_init_model_and_sess(GD, device_name, gpu_count, segments_per_host,
                                model_architecture, compile_params, custom_function_map):
-    # plpy.info("GD keys {}".format(GD.keys()))
     # If a live session is present, re-use it. Otherwise, recreate it.
     if GD_STORE.SESS in GD:
-        # plpy.info("found sess in GD")
         if GD_STORE.SEGMENT_MODEL not in GD:
             plpy.error("Session and model should exist in GD after the first row"
-                       "of the first iteration")
+                       " of the first iteration")
         sess = GD[GD_STORE.SESS]
         segment_model = GD[GD_STORE.SEGMENT_MODEL]
         K.set_session(sess)
     else:
-        # plpy.info("creating sess")
         sess = get_keras_session(device_name, gpu_count, segments_per_host)
         K.set_session(sess)
         segment_model = init_model(model_architecture, compile_params, custom_function_map)
         GD_STORE.init_GD(GD, sess, segment_model)
 
-    plpy.info('sess object {}'.format(sess))
-    plpy.info('sess.graph object {}'.format(sess.graph))
     return segment_model, sess
 
 @MinWarning("warning")
@@ -505,6 +500,7 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     these two calls is the way this function handles the input param
     prev_serialized_weights and clearing keras session.
     For madlib_keras_fit_multiple_model,
+        TODO does point a.) still hold true ?
         a. prev_serialized_weights is always passed in as the state
         (image count, serialized weights), since it is fetched in the
         table for each hop of the model between segments.
@@ -547,9 +543,6 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     is_last_row = agg_image_count == total_images
     return_state = get_state_to_return(segment_model, is_last_row, is_multiple_model,
                                        agg_image_count, total_images)
-    # if is_last_row:
-    #     if is_final_iteration or is_multiple_model:
-    #         GD_STORE.clear_GD(GD)
     if is_multiple_model and is_last_row:
         GD_STORE.clear_GD(GD)
         clear_keras_session(sess)
@@ -615,6 +608,7 @@ def fit_multiple_transition_caching(state, dependent_var, independent_var, depen
         return float(agg_image_count)
 
     segment_model = None
+    sess = None
     if is_last_row:
         device_name = get_device_name_and_set_cuda_env(accessible_gpus_for_seg[current_seg_id], current_seg_id)
         segment_model, sess = get_init_model_and_sess(GD, device_name,
@@ -917,14 +911,9 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
 
     total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
                                                       images_per_seg)
-
     if agg_image_count == total_images and is_final_iteration:
-        plpy.info('clearing session and gd')
-        K.clear_session()
-        sess.close()
         GD_STORE.clear_GD(GD)
-        # plpy.info('sess object {}'.format(sess))
-        # plpy.info('sess.graph object {}'.format(sess.graph))
+        clear_keras_session(sess)
         del sess
         del segment_model
 
