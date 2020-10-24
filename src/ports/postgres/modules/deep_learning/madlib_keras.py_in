@@ -83,6 +83,7 @@ def get_init_model_and_sess(GD, device_name, gpu_count, segments_per_host,
 
     plpy.info('sess object {}'.format(sess))
     plpy.info('sess.graph object {}'.format(sess.graph))
+    plpy.info('tf graph object {}'.format(tf.get_default_graph()))
     return segment_model, sess
 
 @MinWarning("warning")
