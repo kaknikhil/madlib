@@ -933,9 +933,9 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
 
     if agg_image_count == total_images and is_final_iteration:
         plpy.info('clearing session and gd')
+        GD_STORE.clear_GD(GD)
         K.clear_session()
         sess.close()
-        GD_STORE.clear_GD(GD)
         # plpy.info('sess object {}'.format(sess))
         # plpy.info('sess.graph object {}'.format(sess.graph))
         del sess

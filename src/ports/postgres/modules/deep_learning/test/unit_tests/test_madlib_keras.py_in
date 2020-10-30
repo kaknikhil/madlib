@@ -92,98 +92,21 @@ class MadlibKerasFitTestCase(unittest.TestCase):
     def tearDown(self):
         self.module_patcher.stop()
 
-    def _test_fit_transition_first_buffer_pass(self, is_platform_pg):
-        #TODO should we mock tensorflow's close_session and keras'
-        # clear_session instead of mocking the function `K.clear_session`
-        # self.subject.K.set_session = Mock()
-        # self.subject.K.clear_session = Mock()
+    def _test_fit_transition_first_buffer_pass(self, is_platform_pg, **kwargs):
         self.subject.is_platform_pg = Mock(return_value = is_platform_pg)
-        starting_image_count = 0
         ending_image_count = len(self.dependent_var_int)
 
-        # last iteration Call
         previous_state = np.array(self.model_weights, dtype=np.float32)
-
-        k = {'GD': {}}
 
         new_state = self.subject.fit_transition(
             None, self.dependent_var, self.independent_var,
             self.dependent_var_shape, self.independent_var_shape,
             self.model.to_json(), self.compile_params, self.fit_params, 0,
             self.dist_key_mapping, 0, 4, self.total_images_per_seg, False,
-            self.accessible_gpus_for_seg, previous_state.tostring(), True, **k)
-        sess = self.subject.K.get_session()
-        k_graph = sess.graph
-        tf_graph = self.subject.tf.get_default_graph()
-        print "session: {}".format(sess)
-        print "session graph: {}".format(k_graph)
-        print "tf graph: {}".format(tf_graph)
-
+            self.accessible_gpus_for_seg, previous_state.tostring(), "todo-remove", **kwargs)
         image_count = new_state
-        self.assertEqual(ending_image_count, image_count)
-        # set_session is always called
-        # self.assertEqual(1, self.subject.K.set_session.call_count)
-        # Clear session and sess.close must not get called for the first buffer
-        # self.assertEqual(0, self.subject.K.clear_session.call_count)
-        self.assertTrue(k['GD']['segment_model'])
-
-
-        #################################################################
-        starting_image_count = 2*len(self.dependent_var_int)
-        ending_image_count = starting_image_count + len(self.dependent_var_int)
-
-        # last iteration Call
-
-        # multiplied_weights = mult(self.total_images_per_seg[0],self.model_weights)
-
-        # self.subject.compile_and_set_weights(self.model, self.compile_params,
-        #                                      '/cpu:0', self.serialized_weights)
-        # k = {'GD': {'segment_model' :self.model, 'sess': Mock()}}
-
-        state = starting_image_count
-        new_state = self.subject.fit_transition(
-            state, self.dependent_var, self.independent_var,
-            self.dependent_var_shape, self.independent_var_shape,
-            self.model.to_json(), None, self.fit_params, 0,
-            self.dist_key_mapping, 0, 4, self.total_images_per_seg, False,
-            self.accessible_gpus_for_seg, self.dummy_prev_weights, True, **k)
-        sess = self.subject.K.get_session()
-        k_graph = sess.graph
-        tf_graph = self.subject.tf.get_default_graph()
-        print "session: {}".format(sess)
-        print "session graph: {}".format(k_graph)
-        print "tf graph: {}".format(tf_graph)
-
-
-        ##################################################################
-        # Non-last iteration Call
-        # self.subject.K.set_session.reset_mock()
-        # self.subject.K.clear_session.reset_mock()
-        previous_state = np.array(self.model_weights, dtype=np.float32)
-        #
-        k = {'GD' : {}}
-
-        new_state = self.subject.fit_transition(
-            None, self.dependent_var, self.independent_var,
-            self.dependent_var_shape, self.independent_var_shape,
-            self.model.to_json(), self.compile_params, self.fit_params, 0,
-            self.dist_key_mapping, 0, 4, self.total_images_per_seg, False,
-            self.accessible_gpus_for_seg, previous_state.tostring(), False, **k)
-        # sess = self.subject.K.get_session()
-        # k_graph = sess.graph
-        # tf_graph = self.subject.tf.get_default_graph()
-        # print "session: {}".format(sess)
-        # print "session graph: {}".format(k_graph)
-        # print "tf graph: {}".format(tf_graph)
-
-        image_count = new_state
-
-        self.assertEqual(ending_image_count, image_count)
-        # set_session is always called
-        # self.assertEqual(1, self.subject.K.set_session.call_count)
-        # Clear session and sess.close must not get called for the first buffer
-        # self.assertEqual(0, self.subject.K.clear_session.call_count)
-        self.assertTrue(k['GD']['segment_model'])
+        # self.assertTrue(kwargs['GD']['segment_model'])
+        # self.assertEqual(ending_image_count, image_count)
 
     def test_fit_transition_multiple_model_no_cache_first_buffer_pass(self):
         #TODO should we mock tensorflow's close_session and keras'
@@ -364,31 +287,24 @@ class MadlibKerasFitTestCase(unittest.TestCase):
         self.assertTrue(k['SD']['x_train'])
         self.assertTrue(k['SD']['y_train'])
 
-    def _test_fit_transition_last_buffer_pass(self, is_platform_pg):
-        #TODO should we mock tensorflow's close_session and keras'
-        # clear_session instead of mocking the function `K.clear_session`
-        self.subject.K.set_session = Mock()
-        self.subject.K.clear_session = Mock()
+    def _test_fit_transition_last_buffer_pass(self, is_platform_pg, last_iteration = False, **kwargs):
         self.subject.is_platform_pg = Mock(return_value = is_platform_pg)
 
         starting_image_count = 2*len(self.dependent_var_int)
         ending_image_count = starting_image_count + len(self.dependent_var_int)
 
         # last iteration Call
-
         multiplied_weights = mult(self.total_images_per_seg[0],self.model_weights)
 
         self.subject.compile_and_set_weights(self.model, self.compile_params,
                                              '/cpu:0', self.serialized_weights)
-        k = {'SD': {'segment_model' :self.model, 'sess': Mock()}}
-
         state = starting_image_count
         new_state = self.subject.fit_transition(
             state, self.dependent_var, self.independent_var,
             self.dependent_var_shape, self.independent_var_shape,
             self.model.to_json(), None, self.fit_params, 0,
             self.dist_key_mapping, 0, 4, self.total_images_per_seg, False,
-            self.accessible_gpus_for_seg, self.dummy_prev_weights, True, **k)
+            self.accessible_gpus_for_seg, self.dummy_prev_weights, last_iteration, **kwargs)
 
         state = np.fromstring(new_state, dtype=np.float32)
         image_count = state[0]
@@ -396,41 +312,71 @@ class MadlibKerasFitTestCase(unittest.TestCase):
         self.assertEqual(ending_image_count, image_count)
         # weights should be multiplied by final image count
         self.assertTrue((multiplied_weights == weights).all())
-        # set_session is always called
-        self.assertEqual(1, self.subject.K.set_session.call_count)
-        # Clear session and sess.close must get called for the last buffer in gpdb,
-        #  but not in postgres
-        self.assertEqual(1, self.subject.K.clear_session.call_count)
+        self.assertTrue(kwargs['GD']['segment_model'])
 
-        # Non-last iteration Call
-        self.subject.K.set_session.reset_mock()
-        self.subject.K.clear_session.reset_mock()
+    def _test_internal_keras_eval_transition_first_buffer(self, is_platform_pg,
+                                                          last_iteration = False,
+                                                          **kwargs):
+        self.subject.is_platform_pg = Mock(return_value = is_platform_pg)
+        ending_image_count = len(self.dependent_var_int)
 
-        multiplied_weights = mult(self.total_images_per_seg[0],self.model_weights)
+        state = [0,0,0]
+        new_state = self.subject.internal_keras_eval_transition(
+            state, self.dependent_var , self.independent_var,
+            self.dependent_var_shape, self.independent_var_shape,
+            self.model.to_json(),
+            self.serialized_weights, self.compile_params, 0,
+            self.dist_key_mapping, 0, 4,
+            self.total_images_per_seg, False, self.accessible_gpus_for_seg,
+            last_iteration, None, **kwargs)
+
+        agg_loss, agg_accuracy, image_count = new_state
+
+        self.assertEqual(ending_image_count, image_count)
+        # loss and accuracy should be unchanged
+        self.assertAlmostEqual(self.loss * image_count, agg_loss, 4)
+        self.assertAlmostEqual(self.accuracy * image_count, agg_accuracy, 4)
+        self.assertTrue(kwargs['GD']['segment_model'])
+
+    def _test_internal_keras_eval_transition_last_buffer(self, is_platform_pg,
+                                                         last_iteration = False,
+                                                         **kwargs):
+        self.subject.is_platform_pg = Mock(return_value = is_platform_pg)
+
+        starting_image_count = 2*len(self.dependent_var_int)
+        ending_image_count = starting_image_count + len(self.dependent_var_int)
 
         self.subject.compile_and_set_weights(self.model, self.compile_params,
                                              '/cpu:0', self.serialized_weights)
-        k = {'SD': {'segment_model' :self.model, 'sess': Mock()}}
 
-        state = starting_image_count
-        new_state = self.subject.fit_transition(
-            state, self.dependent_var, self.independent_var,
+        state = [self.loss * starting_image_count,
+                 self.accuracy * starting_image_count,
+                 starting_image_count]
+
+        new_state = self.subject.internal_keras_eval_transition(
+            state, self.dependent_var , self.independent_var,
             self.dependent_var_shape, self.independent_var_shape,
-            self.model.to_json(), None, self.fit_params, 0,
-            self.dist_key_mapping, 0, 4, self.total_images_per_seg, False,
-            self.accessible_gpus_for_seg, self.dummy_prev_weights, False, **k)
+            self.model.to_json(),
+            'dummy_model_weights', None, 0,
+            self.dist_key_mapping, 0, 4,
+            self.total_images_per_seg, False, self.accessible_gpus_for_seg,
+            last_iteration, **kwargs)
+        agg_loss, agg_accuracy, image_count = new_state
 
-        state = np.fromstring(new_state, dtype=np.float32)
-        image_count = state[0]
-        weights = np.rint(state[1:]).astype(np.int)
         self.assertEqual(ending_image_count, image_count)
-        # weights should be multiplied by final image count
-        self.assertTrue((multiplied_weights == weights).all())
         # set_session is always called
-        self.assertEqual(1, self.subject.K.set_session.call_count)
+        # self.assertEqual(1, self.subject.K.set_session.call_count)
+        # loss and accuracy should be unchanged
+        self.assertAlmostEqual(self.loss * ending_image_count, agg_loss, 4)
+        self.assertAlmostEqual(self.accuracy * ending_image_count, agg_accuracy, 4)
         # Clear session and sess.close must get called for the last buffer in gpdb,
         #  but not in postgres
-        self.assertEqual(0, self.subject.K.clear_session.call_count)
+        # self.assertEqual(1, self.subject.K.clear_session.call_count)
+
+        if last_iteration:
+            self.assertEquals(0, len(kwargs['GD'].keys()))
+        else:
+            self.assertTrue(kwargs['GD']['segment_model'])
 
     def test_fit_transition_multiple_model_no_cache_last_buffer_pass(self):
         #TODO should we mock tensorflow's close_session and keras'
@@ -615,6 +561,84 @@ class MadlibKerasFitTestCase(unittest.TestCase):
 
     def test_fit_transition_last_buffer_pass_gpdb(self):
         self._test_fit_transition_last_buffer_pass(False)
+
+    def test_fit_eval_2_iterations_mcf_null_gpdb(self):
+
+        """
+        TODO
+        1. assert after each buffer call?
+        1. where should all the asserts be ?
+        1. do we care about checking for keras graph ?
+        1. add comment about not mocking set_session and clear_session
+        1. test caching ?
+        1. test evaluate separately
+        1. move all evaluate test cases to fit test class ?
+        1. Session has been closed exception
+        
+        
+        test cases
+        first iteration
+        last iteration
+        first buffer
+        middle buffer
+        last buffer
+        
+        # fit doesn't care about iterations but eval cares about both iterations
+        # and buffers
+        fit for 3 iteration mcf = 1 val = null
+        fit for 3 iteration mcf = null val = null
+        fit for 3 iteration mcf = 1 val = not null
+        fit for 3 iteration mcf = null val = not null
+        
+        
+        # calling eval directly only cares about buffer 
+        
+        """
+        kwargs = {'GD': {}}
+        GD = kwargs['GD']
+
+        ######################### fit transition for 2 iterations ##########
+        self._test_fit_transition_first_buffer_pass(False, **kwargs)
+        # self._test_fit_transition_middle_buffer_pass(True)
+        self._test_fit_transition_last_buffer_pass(False, **kwargs)
+
+
+        first_iter_keras_sess = self.subject.K.get_session()
+        first_iter_tf_graph = self.subject.tf.get_default_graph()
+        self.assertEquals(first_iter_keras_sess, GD['sess'])
+
+        # last iteration
+        self._test_fit_transition_first_buffer_pass(False, **kwargs)
+        self._test_fit_transition_last_buffer_pass(False, **kwargs)
+
+        last_iter_keras_sess = self.subject.K.get_session()
+        last_iter_tf_graph = self.subject.tf.get_default_graph()
+
+        self.assertEquals(first_iter_keras_sess, last_iter_keras_sess)
+        self.assertEquals(first_iter_tf_graph, last_iter_tf_graph)
+        self.assertEquals(last_iter_keras_sess, GD['sess'])
+
+        ###################### eval transition for last iteration ###########
+
+        self._test_internal_keras_eval_transition_first_buffer(False, True,
+                                                               **kwargs)
+        eval_last_iter_keras_sess = self.subject.K.get_session()
+        eval_last_iter_tf_graph = self.subject.tf.get_default_graph()
+
+        self.assertEquals(eval_last_iter_keras_sess, last_iter_keras_sess)
+        self.assertEquals(eval_last_iter_tf_graph, last_iter_tf_graph)
+        self.assertEquals(last_iter_keras_sess, GD['sess'])
+
+        self._test_internal_keras_eval_transition_last_buffer(False, True,
+                                                              **kwargs)
+
+        eval_last_iter_keras_sess = self.subject.K.get_session()
+        eval_last_iter_tf_graph = self.subject.tf.get_default_graph()
+
+        self.assertNotEquals(eval_last_iter_keras_sess, last_iter_keras_sess)
+        self.assertNotEquals(eval_last_iter_tf_graph, last_iter_tf_graph)
+        self.assertEquals(0, len(kwargs['GD'].keys()))
+
 
     def test_fit_transition_first_tuple_none_ind_var_dep_var(self):
         k = {}
@@ -1661,16 +1685,12 @@ class MadlibKerasEvaluationTestCase(unittest.TestCase):
     def tearDown(self):
         self.module_patcher.stop()
 
-    def _test_internal_keras_eval_transition_first_buffer(self, is_platform_pg):
-        self.subject.K.set_session = Mock()
-        self.subject.K.clear_session = Mock()
+    def _test_internal_keras_eval_transition_first_buffer(self, is_platform_pg,
+                                                          last_iteration = False,
+                                                          **kwargs):
         self.subject.is_platform_pg = Mock(return_value = is_platform_pg)
-        starting_image_count = 0
         ending_image_count = len(self.dependent_var_int)
 
-        # last iteration call
-
-        k = {'SD' : {}}
         state = [0,0,0]
         new_state = self.subject.internal_keras_eval_transition(
             state, self.dependent_var , self.independent_var,
@@ -1678,45 +1698,17 @@ class MadlibKerasEvaluationTestCase(unittest.TestCase):
             self.model.to_json(),
             self.serialized_weights, self.compile_params, 0,
             self.dist_key_mapping, 0, 4,
-            self.total_images_per_seg, False, self.accessible_gpus_for_seg, True, **k)
+            self.total_images_per_seg, False, self.accessible_gpus_for_seg,
+            last_iteration, None, **kwargs)
 
         agg_loss, agg_accuracy, image_count = new_state
 
         self.assertEqual(ending_image_count, image_count)
-        # Call set_session once for gpdb (but not for postgres)
-        self.assertEqual(1, self.subject.K.set_session.call_count)
         # loss and accuracy should be unchanged
         self.assertAlmostEqual(self.loss * image_count, agg_loss, 4)
         self.assertAlmostEqual(self.accuracy * image_count, agg_accuracy, 4)
-        # Clear session and sess.close must not get called for the first buffer
-        self.assertEqual(0, self.subject.K.clear_session.call_count)
-        self.assertTrue(k['SD']['segment_model'])
+        self.assertTrue(kwargs['GD']['segment_model'])
 
-        # Non-final call
-
-        self.subject.K.set_session.reset_mock()
-        self.subject.K.clear_session.reset_mock()
-        k = {'SD' : {}}
-        state = [0,0,0]
-
-        new_state = self.subject.internal_keras_eval_transition(
-            state, self.dependent_var , self.independent_var,
-            self.dependent_var_shape, self.independent_var_shape,
-            self.model.to_json(),
-            self.serialized_weights, self.compile_params, 0,
-            self.dist_key_mapping, 0, 4,
-            self.total_images_per_seg, False, self.accessible_gpus_for_seg, False, **k)
-        agg_loss, agg_accuracy, image_count = new_state
-
-        self.assertEqual(ending_image_count, image_count)
-        # set_session must not get called for the first buffer
-        self.assertEqual(1, self.subject.K.set_session.call_count)
-        # loss and accuracy should be unchanged
-        self.assertAlmostEqual(self.loss * image_count, agg_loss, 4)
-        self.assertAlmostEqual(self.accuracy * image_count, agg_accuracy, 4)
-        # Clear session and sess.close must not get called for the first buffer
-        self.assertEqual(0, self.subject.K.clear_session.call_count)
-        self.assertTrue(k['SD']['segment_model'])
 
     def _test_internal_keras_eval_transition_middle_buffer(self, is_platform_pg):
         #TODO should we mock tensorflow's close_session and keras'
@@ -1789,18 +1781,14 @@ class MadlibKerasEvaluationTestCase(unittest.TestCase):
         # Clear session and sess.close must not get called for the middle buffer
         self.assertEqual(0, self.subject.K.clear_session.call_count)
 
-    def _test_internal_keras_eval_transition_last_buffer(self, is_platform_pg):
-        #TODO should we mock tensorflow's close_session and keras'
-        # clear_session instead of mocking the function `K.clear_session`
-        self.subject.K.set_session = Mock()
-        self.subject.K.clear_session = Mock()
+    def _test_internal_keras_eval_transition_last_buffer(self, is_platform_pg,
+                                                         last_iteration = False,
+                                                         **kwargs):
         self.subject.is_platform_pg = Mock(return_value = is_platform_pg)
 
         starting_image_count = 2*len(self.dependent_var_int)
         ending_image_count = starting_image_count + len(self.dependent_var_int)
 
-        k = {'SD' : {}}
-
         self.subject.compile_and_set_weights(self.model, self.compile_params,
                                              '/cpu:0', self.serialized_weights)
 
@@ -1808,62 +1796,31 @@ class MadlibKerasEvaluationTestCase(unittest.TestCase):
                  self.accuracy * starting_image_count,
                  starting_image_count]
 
-        k['SD']['segment_model'] = self.model
-        k['SD']['sess'] = Mock()
-
         new_state = self.subject.internal_keras_eval_transition(
             state, self.dependent_var , self.independent_var,
             self.dependent_var_shape, self.independent_var_shape,
             self.model.to_json(),
             'dummy_model_weights', None, 0,
             self.dist_key_mapping, 0, 4,
-            self.total_images_per_seg, False, self.accessible_gpus_for_seg, True, **k)
+            self.total_images_per_seg, False, self.accessible_gpus_for_seg,
+            last_iteration, **kwargs)
         agg_loss, agg_accuracy, image_count = new_state
 
         self.assertEqual(ending_image_count, image_count)
         # set_session is always called
-        self.assertEqual(1, self.subject.K.set_session.call_count)
+        # self.assertEqual(1, self.subject.K.set_session.call_count)
         # loss and accuracy should be unchanged
         self.assertAlmostEqual(self.loss * ending_image_count, agg_loss, 4)
         self.assertAlmostEqual(self.accuracy * ending_image_count, agg_accuracy, 4)
         # Clear session and sess.close must get called for the last buffer in gpdb,
         #  but not in postgres
-        self.assertEqual(1, self.subject.K.clear_session.call_count)
+        # self.assertEqual(1, self.subject.K.clear_session.call_count)
 
-        # Non-final call
+        if last_iteration:
+            self.assertEquals(0, len(kwargs['GD'].keys()))
+        else:
+            self.assertTrue(kwargs['GD']['segment_model'])
 
-        self.subject.K.set_session.reset_mock()
-        self.subject.K.clear_session.reset_mock()
-        k = {'SD' : {}}
-
-        self.subject.compile_and_set_weights(self.model, self.compile_params,
-                                             '/cpu:0', self.serialized_weights)
-
-        state = [self.loss * starting_image_count,
-                 self.accuracy * starting_image_count,
-                 starting_image_count]
-
-        k['SD']['segment_model'] = self.model
-        k['SD']['sess'] = Mock()
-
-        new_state = self.subject.internal_keras_eval_transition(
-            state, self.dependent_var , self.independent_var,
-            self.dependent_var_shape, self.independent_var_shape,
-            self.model.to_json(),
-            'dummy_model_weights', None, 0,
-            self.dist_key_mapping, 0, 4,
-            self.total_images_per_seg, False, self.accessible_gpus_for_seg, False, **k)
-
-        agg_loss, agg_accuracy, image_count = new_state
-
-        self.assertEqual(ending_image_count, image_count)
-        # set_session is always called
-        self.assertEqual(1, self.subject.K.set_session.call_count)
-        # loss and accuracy should be unchanged
-        self.assertAlmostEqual(self.loss * ending_image_count, agg_loss, 4)
-        self.assertAlmostEqual(self.accuracy * ending_image_count, agg_accuracy, 4)
-        # Clear session and sess.close must not get called in non-final iterations
-        self.assertEqual(0, self.subject.K.clear_session.call_count)
 
     def test_internal_keras_eval_transition_first_buffer_pg(self):
         self._test_internal_keras_eval_transition_first_buffer(True)
