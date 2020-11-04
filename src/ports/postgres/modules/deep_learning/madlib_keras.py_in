@@ -66,24 +66,31 @@ def get_init_model_and_sess(GD, device_name, gpu_count, segments_per_host,
                                model_architecture, compile_params, custom_function_map):
     # plpy.info("GD keys {}".format(GD.keys()))
     # If a live session is present, re-use it. Otherwise, recreate it.
+    if GD_STORE.SEGMENT_MODEL not in GD:
+        segment_model = init_model(model_architecture, compile_params, custom_function_map)
+        GD['segment_model'] = segment_model
+    else:
+        segment_model =  GD['segment_model']
+
     if GD_STORE.SESS in GD:
         # plpy.info("found sess in GD")
-        if GD_STORE.SEGMENT_MODEL not in GD:
-            plpy.error("Session and model should exist in GD after the first row"
-                       "of the first iteration")
+        # if GD_STORE.SEGMENT_MODEL not in GD:
+        #     plpy.error("Session and model should exist in GD after the first row"
+        #                "of the first iteration")
         sess = GD[GD_STORE.SESS]
-        segment_model = GD[GD_STORE.SEGMENT_MODEL]
+        # segment_model = GD[GD_STORE.SEGMENT_MODEL]
         # K.set_session(sess)
     else:
-        # plpy.info("creating sess")
+        plpy.info("create sess and init GD")
         sess = get_keras_session(device_name, gpu_count, segments_per_host)
+        GD[GD_STORE.SESS] = sess
         # K.set_session(sess)
-        segment_model = init_model(model_architecture, compile_params, custom_function_map)
-        GD_STORE.init_GD(GD, sess, segment_model)
+        # segment_model = init_model(model_architecture, compile_params, custom_function_map)
+        # GD_STORE.init_GD(GD, sess, segment_model)
 
     plpy.info('sess object {}'.format(sess))
-    plpy.info('sess.graph object {}, len = {}'.format(sess.graph, len(sess.graph.get_operations())))
-    plpy.info('tf graph object {}, len = {}'.format(tf.get_default_graph(), len(tf.get_default_graph().get_operations())))
+    # plpy.info('sess.graph object {}, len = {}'.format(sess.graph, len(sess.graph.get_operations())))
+    # plpy.info('tf graph object {}, len = {}'.format(tf.get_default_graph(), len(tf.get_default_graph().get_operations())))
     return segment_model, sess
 
 @MinWarning("warning")
@@ -564,8 +571,15 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     #     if is_final_iteration or is_multiple_model:
     #         GD_STORE.clear_GD(GD)
     if is_multiple_model and is_last_row:
-        GD_STORE.clear_GD(GD)
-        clear_tf_session(sess)
+        # plpy.info('last row')
+        # GD_STORE.clear_GD(GD)
+        del GD['segment_model']
+        tf.reset_default_graph()
+        # clear_tf_session(sess)
+        # clear_keras_session(sess)
+        # del sess
+        # del segment_model
+
 
     return return_state
 
@@ -931,10 +945,16 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
     total_images = get_image_count_per_seg_from_array(dist_key_mapping.index(dist_key),
                                                       images_per_seg)
 
-    if agg_image_count == total_images and is_final_iteration:
-        plpy.info('clearing session and gd')
-        GD_STORE.clear_GD(GD)
-        clear_tf_session(sess)
+    if agg_image_count == total_images:
+        del GD['segment_model']
+        if is_final_iteration:
+            del GD['sess']
+            clear_tf_session(sess)
+    # if agg_image_count == total_images and is_final_iteration:
+    #     plpy.info('clearing session and gd')
+        # GD_STORE.clear_GD(GD)
+        # clear_tf_session(sess)
+        # clear_keras_session(sess)
         # K.clear_session()
         # sess.close()
         # plpy.info('sess object {}'.format(sess))

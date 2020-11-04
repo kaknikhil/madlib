@@ -230,6 +230,8 @@ class FitMultipleModel():
         total_msts = len(self.msts_for_schedule)
         for iter in range(1, self.num_iterations+1):
             for mst_idx in range(total_msts):
+                plpy.info('########hop {}#############'.format(mst_idx))
+
                 mst_row = [self.grand_schedule[dist_key][mst_idx]
                            for dist_key in self.dist_keys]
                 self.create_mst_schedule_table(mst_row)
@@ -268,7 +270,10 @@ class FitMultipleModel():
             seg_ids = self.dist_key_mapping_valid
             images_per_seg = self.images_per_seg_valid
             self.info_str += "\n\tValidation set after iteration {0}:".format(epoch)
+        idx = 0
         for mst in self.msts:
+            idx += 1
+            is_final_training_call = (iter == self.num_iterations and idx == len(self.msts))
             model_arch, _ = get_model_arch_weights(self.model_arch_table, mst[self.model_id_col])
             _, metric, loss = compute_loss_and_metrics(
                 self.schema_madlib, table, "$madlib${0}$madlib$".format(
@@ -279,7 +284,7 @@ class FitMultipleModel():
                 self.accessible_gpus_for_seg,
                 seg_ids,
                 images_per_seg,
-                [], [], epoch, True,
+                [], [], epoch, is_final_training_call,
                 mst[self.object_map_col],
                 self.model_output_table,
                 mst[self.mst_key_col])
