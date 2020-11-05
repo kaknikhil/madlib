@@ -101,6 +101,7 @@ def clear_keras_session(sess = None):
 
 def clear_tf_session(sess = None):
     tf.reset_default_graph()
+    sess.reset(None )
     sess.close()
 
 
