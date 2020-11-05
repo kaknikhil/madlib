@@ -68,32 +68,27 @@ def get_init_model_and_sess(GD, device_name, gpu_count, segments_per_host,
     # If a live session is present, re-use it. Otherwise, recreate it.
     if GD_STORE.SEGMENT_MODEL not in GD:
         segment_model = init_model(model_architecture, compile_params, custom_function_map)
-        GD[GD_STORE.SEGMENT_MODEL] = segment_model
+        GD['segment_model'] = segment_model
     else:
-        segment_model = GD[GD_STORE.SEGMENT_MODEL]
+        segment_model =  GD['segment_model']
 
-    # if GD_STORE.SESS in GD:
+    if GD_STORE.SESS in GD:
         # plpy.info("found sess in GD")
         # if GD_STORE.SEGMENT_MODEL not in GD:
         #     plpy.error("Session and model should exist in GD after the first row"
         #                "of the first iteration")
-        # sess = GD[GD_STORE.SESS]
+        sess = GD[GD_STORE.SESS]
         # segment_model = GD[GD_STORE.SEGMENT_MODEL]
         # K.set_session(sess)
-    # else:
-        # plpy.info("create sess and init GD")
-        # sess = get_keras_session(device_name, gpu_count, segments_per_host)
-        # GD[GD_STORE.SESS] = sess
+    else:
+        plpy.info("create sess and init GD")
+        sess = get_keras_session(device_name, gpu_count, segments_per_host)
+        GD[GD_STORE.SESS] = sess
         # K.set_session(sess)
         # segment_model = init_model(model_architecture, compile_params, custom_function_map)
         # GD_STORE.init_GD(GD, sess, segment_model)
-    # tf.config.experimental.set_memory_growth(tf.config.experimental.list_physical_devices('GPU')[0], False)
-    # tf.config.experimental.VirtualDeviceConfiguration
 
-    sess = None
-    plpy.info('K sess object {}'.format(tf.compat.v1.keras.backend.get_session()))
-    plpy.info('K sess graph object {}'.format(tf.compat.v1.keras.backend.get_session().graph))
-    # plpy.info('sess object {}'.format(sess))
+    plpy.info('sess object {}'.format(sess))
     # plpy.info('sess.graph object {}, len = {}'.format(sess.graph, len(sess.graph.get_operations())))
     # plpy.info('tf graph object {}, len = {}'.format(tf.get_default_graph(), len(tf.get_default_graph().get_operations())))
     return segment_model, sess
@@ -578,9 +573,8 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     if is_multiple_model and is_last_row:
         # plpy.info('last row')
         # GD_STORE.clear_GD(GD)
-        del GD[GD_STORE.SEGMENT_MODEL]
-        tf.compat.v1.keras.backend.clear_session()
-        # tf.reset_default_graph()
+        del GD['segment_model']
+        tf.reset_default_graph()
         # clear_tf_session(sess)
         # clear_keras_session(sess)
         # del sess
@@ -952,12 +946,10 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
                                                       images_per_seg)
 
     if agg_image_count == total_images:
-        del GD[GD_STORE.SEGMENT_MODEL]
-        tf.compat.v1.keras.backend.clear_session()
-        # tf.reset_default_graph()
-        # if is_final_iteration:
-            # del GD['sess']
-            # clear_tf_session(sess)
+        del GD['segment_model']
+        if is_final_iteration:
+            del GD['sess']
+            clear_tf_session(sess)
     # if agg_image_count == total_images and is_final_iteration:
     #     plpy.info('clearing session and gd')
         # GD_STORE.clear_GD(GD)
