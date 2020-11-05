@@ -565,7 +565,7 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
     #         GD_STORE.clear_GD(GD)
     if is_multiple_model and is_last_row:
         GD_STORE.clear_GD(GD)
-        clear_tf_session(sess)
+        clear_keras_session(sess)
 
     return return_state
 
@@ -934,13 +934,12 @@ def internal_keras_eval_transition(state, dependent_var, independent_var,
     if agg_image_count == total_images and is_final_iteration:
         plpy.info('clearing session and gd')
         GD_STORE.clear_GD(GD)
-        clear_tf_session(sess)
         # K.clear_session()
-        # sess.close()
+        sess.close()
         # plpy.info('sess object {}'.format(sess))
         # plpy.info('sess.graph object {}'.format(sess.graph))
-        # del sess
-        # del segment_model
+        del sess
+        del segment_model
 
     state[0] = agg_loss
     state[1] = agg_metric
