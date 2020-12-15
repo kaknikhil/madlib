@@ -274,7 +274,12 @@ class FitMultipleModel():
             plpy.info("\n"+self.info_str)
         plpy.execute("DROP TABLE IF EXISTS {self.cached_source_table};".format(self=self))
 
-    def evaluate_model(self, epoch, table, is_train):
+    def evaluate_model(self, iter, table, is_train):
+        if is_train:
+            label = "training"
+        else:
+            label = "validation"
+
         if is_train:
             mst_metric_eval_time = self.train_mst_metric_eval_time
             mst_loss = self.train_mst_loss
@@ -287,10 +292,11 @@ class FitMultipleModel():
             mst_metric = self.valid_mst_metric
             seg_ids = self.dist_key_mapping_valid
             images_per_seg = self.images_per_seg_valid
-            self.info_str += "\n\tValidation set after iteration {0}:".format(epoch)
+            self.info_str += "\n\t\n\tValidation set after iteration {0}:".format(iter)
+        total_eval_compute_time = 0
         for mst in self.msts:
             model_arch, _ = get_model_arch_weights(self.model_arch_table, mst[self.model_id_col])
-            _, metric, loss = compute_loss_and_metrics(
+            eval_compute_time, metric, loss = compute_loss_and_metrics(
                 self.schema_madlib, table, "$madlib${0}$madlib$".format(
                     mst[self.compile_params_col]),
                 model_arch,
@@ -303,11 +309,15 @@ class FitMultipleModel():
                 mst[self.object_map_col],
                 self.model_output_table,
                 mst[self.mst_key_col])
+            total_eval_compute_time += eval_compute_time
             mst_metric_eval_time[mst[self.mst_key_col]] \
                 .append(self.metrics_elapsed_time_offset + (time.time() - self.metrics_elapsed_start_time))
             mst_loss[mst[self.mst_key_col]].append(loss)
             mst_metric[mst[self.mst_key_col]].append(metric)
-            self.info_str += "\n\tmst_key={0}: metric={1}, loss={2}".format(mst[self.mst_key_col], metric, loss)
+            self.info_str += "\n\tmst_key={0}: metric={1}, loss={2}".format(
+                mst[self.mst_key_col], metric, loss)
+        self.info_str += "\n\tTime for evaluating {0} dataset in iteration " \
+                         "{1}: {2}".format(label, iter, total_eval_compute_time)
 
     def generate_schedule(self, msts):
         """ Generate the schedule for models hopping to segments """
