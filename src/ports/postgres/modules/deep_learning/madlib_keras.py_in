@@ -544,6 +544,7 @@ def fit_transition(state, dependent_var, independent_var, dependent_var_shape,
         and only gets cleared in eval transition at the last row of the last iteration.
 
     """
+    plpy.info("without caching")
     if not dependent_var_shape:
         plpy.error("fit_transition called with no data")
 
@@ -623,6 +624,7 @@ def fit_multiple_transition_caching(dependent_var, independent_var, dependent_va
     - x_train, y_train and cache_set is cleared from GD for
       is_final_training_call = True
     """
+    plpy.info("with caching")
     GD = kwargs['GD']
 
     trans_enter_time = time.time()
