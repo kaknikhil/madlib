@@ -445,6 +445,7 @@ def fit(schema_madlib, source_table, model, model_arch_table,
                    normalizing_const_colname=NORMALIZING_CONST_COLNAME,
                    FLOAT32_SQL_TYPE = FLOAT32_SQL_TYPE,
                    model_id_colname = ModelArchSchema.MODEL_ID,
+                   source_summary_table=fit_validator.source_summary_table,
                    **locals()),
                    ["TEXT", "TEXT", "TEXT", "TEXT", "DOUBLE PRECISION[]"])
     plpy.execute(create_output_summary_table,
@@ -1031,7 +1032,6 @@ def get_loss_metric_from_keras_eval(schema_madlib, table, columns_dict, compile_
         weights = '$1'
         mult_sql = ''
         custom_map_var = '$2'
-        plpy.info(eval_sql.format(**locals()))
         evaluate_query = plpy.prepare(eval_sql.format(**locals()), ["bytea", "bytea"])
         res = plpy.execute(evaluate_query, [serialized_weights, custom_function_map])
 
