@@ -70,7 +70,7 @@ SELECT assert(test_input_table($test$SELECT madlib_keras_fit(
     $$ batch_size=2, epochs=1, verbose=0 $$::text,
     3,
     NULL,
-    'table_does_not_exist')$test$, $test$'table_does_not_exist' does not exist$test$
+    'table_does_not_exist')$test$, $test$'table_does_not_exist_summary' does not exist$test$
     ), 'Failed to assert the correct error message for non existing validation table');
 
 -- Please do not break up the compile_params string
