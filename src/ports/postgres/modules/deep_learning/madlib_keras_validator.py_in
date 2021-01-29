@@ -330,9 +330,9 @@ class FitCommonValidator(object):
 
     def _validate_tables_schema(self):
         # Source table and validation tables must have the same schema
-        additional_cols = ''
+        additional_cols = []
         if not is_platform_pg():
-            additional_cols = [DISTRIBUTION_KEY_COLNAME]
+            additional_cols.append(DISTRIBUTION_KEY_COLNAME)
 
         self._validate_columns_in_preprocessed_table(self.source_table,
                                                     self.independent_varname +
