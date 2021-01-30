@@ -289,6 +289,11 @@ class FitCommonValidator(object):
 
         self.dependent_varname = self.src_summary_dict['dependent_varname']
         self.independent_varname = self.src_summary_dict['independent_varname']
+        if not isinstance(self.dependent_varname, list) or \
+                not isinstance(self.independent_varname, list):
+            #TODO improve error message
+            plpy.error("Input table '{0}' has not been preprocessed properly. "
+                       "Please run input preprocessor again.".format(self.source_table))
         self.dep_shape_cols = [add_postfix(i, "_shape") for i in self.dependent_varname]
         self.ind_shape_cols = [add_postfix(i, "_shape") for i in self.independent_varname]
 

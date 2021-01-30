@@ -1313,6 +1313,37 @@ class MadlibKerasFitCommonValidatorTestCase(unittest.TestCase):
             'module_name', None)
         self.assertEqual(False, obj._is_valid_metrics_compute_frequency())
 
+    def test_validator_dep_indep_type_not_array(self):
+        # only dep is not array
+        self.subject.FitCommonValidator.get_source_summary_table_dict = \
+            Mock(return_value={'dependent_varname':'a',
+                               'independent_varname':['b']})
+        with self.assertRaises(plpy.PLPYException) as error:
+            self.subject.FitCommonValidator(
+                'test_table', 'val_table', 'model_table', 5, None, False, False, [0],
+                'module_name', None)
+        self.assertIn('not been preprocessed properly', str(error.exception))
+
+        # only indep is not array
+        self.subject.FitCommonValidator.get_source_summary_table_dict = \
+            Mock(return_value={'dependent_varname':['a'],
+                               'independent_varname':'b'})
+        with self.assertRaises(plpy.PLPYException) as error:
+            self.subject.FitCommonValidator(
+                'test_table', 'val_table', 'model_table', 5, None, False, False, [0],
+                'module_name', None)
+        self.assertIn('not been preprocessed properly', str(error.exception))
+
+        # both indep and dep are not arrays
+        self.subject.FitCommonValidator.get_source_summary_table_dict = \
+            Mock(return_value={'dependent_varname':'a',
+                               'independent_varname':'b'})
+        with self.assertRaises(plpy.PLPYException) as error:
+            self.subject.FitCommonValidator(
+                'test_table', 'val_table', 'model_table', 5, None, False, False, [0],
+                'module_name', None)
+        self.assertIn('not been preprocessed properly', str(error.exception))
+
 
 class InputValidatorTestCase(unittest.TestCase):
     def setUp(self):
