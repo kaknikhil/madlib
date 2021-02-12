@@ -1686,14 +1686,16 @@ PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
     import traceback
     from sys import exc_info
     import plpy
-    try:
-        return madlib_keras.fit_transition(**globals())
-    except Exception as e:
-        etype, _, tb = exc_info()
-        detail = ''.join(traceback.format_exception(etype, e, tb))
-        message = e.args[0] + 'TransAggDetail' + detail
-        e.args = (message,)
-        raise e
+    #try:
+    return madlib_keras.fit_transition(**globals())
+    #except Exception as e:
+    #    plpy.info('fit transition failed')
+    #    etype, _, tb = exc_info()
+    #    detail = ''.join(traceback.format_exception(etype, e, tb))
+    #    message = e.args[0] + 'TransAggDetail' + detail
+    #    plpy.info(message)
+    #    e.args = (message,)
+    #    raise e
 $$ LANGUAGE plpythonu
 m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
 
@@ -1728,14 +1730,18 @@ PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
     import traceback
     from sys import exc_info
     import plpy
-    try:
-        return madlib_keras.fit_transition_wide(**globals())
-    except Exception as e:
-        etype, _, tb = exc_info()
-        detail = ''.join(traceback.format_exception(etype, e, tb))
-        message = e.args[0] + 'TransAggDetail' + detail
-        e.args = (message,)
-        raise e
+    #try:
+    return madlib_keras.fit_transition_wide(**globals())
+    #except Exception as e:
+    #    plpy.info('fit transition failed')
+    #    etype, _, tb = exc_info()
+    #    detail = ''.join(traceback.format_exception(etype, e, tb))
+    #    plpy.info('e.args')
+    #    plpy.info(detail)
+    #    message = e.args[0] + 'TransAggDetail' + detail
+    #    plpy.info(message)
+    #    e.args = (message,)
+    #    raise e
 $$ LANGUAGE plpythonu
 m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
 
@@ -1748,14 +1754,14 @@ PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
     from sys import exc_info
     import plpy
 
-    try:
-        return madlib_keras.fit_merge(**globals())
-    except Exception as e:
-        etype, _, tb = exc_info()
-        detail = ''.join(traceback.format_exception(etype, e, tb))
-        message = e.args[0] + 'MergeAggDetail' + detail
-        e.args = (message,)
-        raise e
+    #try:
+    return madlib_keras.fit_merge(**globals())
+    #except Exception as e:
+    #    etype, _, tb = exc_info()
+    #    detail = ''.join(traceback.format_exception(etype, e, tb))
+    #    message = e.args[0] + 'MergeAggDetail' + detail
+    #    e.args = (message,)
+    #    raise e
 $$ LANGUAGE plpythonu
 m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
 
@@ -1766,14 +1772,14 @@ PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
     import traceback
     from sys import exc_info
     import plpy
-    try:
-        return madlib_keras.fit_final(**globals())
-    except Exception as e:
-        etype, _, tb = exc_info()
-        detail = ''.join(traceback.format_exception(etype, e, tb))
-        message = e.args[0] + 'FinalAggDetail' + detail
-        e.args = (message,)
-        raise e
+    #try:
+    return madlib_keras.fit_final(**globals())
+    #except Exception as e:
+    #    etype, _, tb = exc_info()
+    #    detail = ''.join(traceback.format_exception(etype, e, tb))
+    #    message = e.args[0] + 'FinalAggDetail' + detail
+    #    e.args = (message,)
+    #    raise e
 
 $$ LANGUAGE plpythonu
 m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');

@@ -949,20 +949,21 @@ class FitMultipleModel(object):
                 [ 'BOOLEAN' ]
             )
 
-        try:
-            plpy_execute(self.udf_plan, [ self.is_final_training_call ] )
-        except plpy.SPIError as e:
-            msg = e.message
-            if not 'UDF_Detail' in msg:
-                raise e
-            e.message, detail = msg.split('UDF_Detail')
-            # Extract Traceback from segment, add to
-            #  DETAIL of error message on coordinator
-            e.args = (e.message,)
-            spidata = list(e.spidata)
-            spidata[1] = detail
-            e.spidata = tuple(spidata)
-            raise e
+        #try:
+        plpy_execute(self.udf_plan, [ self.is_final_training_call ] )
+        #except plpy.SPIError as e:
+        #    plpy.info("error is {}".format(e.message))
+        #    msg = e.message
+        #    if not 'TransAggDetail' in msg:
+        #        raise e
+        #    e.message, detail = msg.split('TransAggDetail')
+        #    # Extract Traceback from segment, add to
+        #    #  DETAIL of error message on coordinator
+        #    e.args = (e.message,)
+        #    spidata = list(e.spidata)
+        #    spidata[1] = detail
+        #    e.spidata = tuple(spidata)
+        #    raise e
 
         DEBUG.print_timing("udf")
 
